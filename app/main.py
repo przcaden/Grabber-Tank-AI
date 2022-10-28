@@ -1,30 +1,70 @@
 
+#########################################################################
+#                                                                       #
+#                      Grabber-Tank PC Client Script                    #
+#                              Caden Perez                              #
+#                                                                       #
+#                          CSCE-480 Intro to AI                         #
+#                              Final Project                            #
+#                                                                       #
+#########################################################################
+
+
 import cv2
 import os
-import RPi.GPIO as GPIO
-import picamera
-import time
+import io
+import socket
+import struct
+from PIL import Image
 
-# May change later to fit os res
-CAM_WIDTH = 640
-CAM_HEIGHT = 480
+IPV4 = socket.gethostbyname()
 
-# Initialize Raspberry Pi camera
-cam = PiCamera()
-cam.resolution = (CAM_WIDTH, CAM_HEIGHT)
-cam.framerate = 32
-rawCapture = PiGRBArray(cam, size=(CAM_WIDTH, CAM_HEIGHT))
+# Attach server connection to robot over local wifi
+server_socket = socket.socket()
+server_socket.bind((IPV4, 8000))
+server_socket.listen(0)
 
-# Allow camera calibration
-time.sleep(0.1)
+# Accept a single connection and make a file-like object out of it
+connection = server_socket.accept()[0].makefile('rb')
 
-# Display the video image
-for frame in cam.capture_continuous(rawCapture, format="bgr", use_video_port=True):
-    result, img = cam.read()
-    if result:
-        cv2.imshow('Vid Image', img)
-    key = cv2.waitKey(1) & 0xFF
+# Display preview/loading image
+cv2.imshow('Tank-Grabber Output', cv2.imread('assets/preview.jpeg'))
 
-    rawCapture.truncate(0)
-    if key == ord("q"):
-        break
+try:
+    img = None
+    while True:
+        # Read the length of the image as a 32-bit unsigned int. If the
+        # length is zero, quit the loop
+        image_len = struct.unpack('<L', connection.read(struct.calcsize('<L')))[0]
+        if not image_len:
+            break
+        
+        # Start a stream to hold image data and read from it
+        image_stream = io.BytesIO()
+        image_stream.write(connection.read(image_len))
+
+        # Rewind the stream and open it as an image
+        image_stream.seek(0)
+        image = Image.open(image_stream)
+        
+        # Display received image
+        if img is None:
+            img = cv2.imshow('Tank-Grabber Output', image)
+        else:
+            img.set_data(image)
+
+        print('Image is %dx%d' % image.size)
+        image.verify()
+        print('Image is verified')
+
+finally:
+    # Close connection
+    connection.close()
+    server_socket.close()
+
+    # Display a handsome gentleman
+    cv2.imshow('Tank-Grabber Output', cv2.imread('assets/close.jpeg'))
+
+    # Await inevitable destruction
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()

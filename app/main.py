@@ -11,7 +11,6 @@
 
 
 import cv2
-import os
 import io
 import socket
 import struct
@@ -30,6 +29,7 @@ connection = server_socket.accept()[0].makefile('rb')
 # Display preview/loading image
 cv2.imshow('Tank-Grabber Output', cv2.imread('assets/preview.jpeg'))
 
+# Run unending connection to robot and display its RPi video
 try:
     img = None
     while True:

@@ -26,7 +26,7 @@ IPV4 = socket.gethostbyname()
 GPIO.output(bs.servo1, True)
 dis = bs.ultra()
 
-# Connect client to PC over local wifi
+# Connect client to PC over local wifi (must be the same network/IPV4)
 client_socket = socket.socket()
 client_socket.connect((IPV4, 8000))
 connection = client_socket.makefile('wb')
@@ -41,7 +41,6 @@ def stream_request(stream):
     img = stream.read()
     return img
 
-
 def main():
     # Reset arm to neutral position
     bs.resetMotors()
@@ -54,31 +53,40 @@ def main():
     start = utime.time()
     stream = io.BytesIO()
 
-    # Run continuous stream of video from RPi camera
-    for foo in bs.cam.capture_continuous(stream, 'jpeg'):
+    goal_finish = False
+    while not goal_finish:
+        # Run continuous stream of video from RPi camera
+        for foo in bs.cam.capture_continuous(stream, 'jpeg'):
 
-        # Detect if the object is found within the current image
-        img = stream_request(stream)
-        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        detected_objects = bs.object_data.detectMultiScale(img_gray, minSize=(20, 20))
+            # Get image from RPi camera and detect if any objects are in view
+            img = stream_request(stream)
+            img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            detected_objects = bs.object_data.detectMultiScale(img_gray, minSize=(20, 20))
 
-        # Highlight any found objects in the image
-        for (x,y,w,h) in detected_objects:
-            img = cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0), 2)
+            # Highlight any found objects in the image
+            for (x,y,w,h) in detected_objects:
+                img = cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0), 2)
 
-        if len(detected_objects) > 0:
-            something = 0
+            # Perform AI decisionmaking if an object is detected
+            if len(detected_objects) > 0:
+                something = 0
 
-        # Send image data to client
-        connection.write(img)
+            # Send image data to client
+            connection.write(img)
 
-        # Reset the stream for the next capture
-        stream.seek(0)
-        stream.truncate()
+            # Reset the stream for the next capture
+            stream.seek(0)
+            stream.truncate()
+
+        # Check if camera capture ended prematurely
+        if not goal_finish:
+            bs.resetMotors()
+            stream = io.BytesIO()
 
     # Write a length of zero to the stream to signal we're done
     connection.write(struct.pack('<L', 0))
 
-    # Close connection
+    # Code cleanup before closing program
     connection.close()
     client_socket.close()
+    bs.cleanup()

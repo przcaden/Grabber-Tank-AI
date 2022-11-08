@@ -1,11 +1,13 @@
 
 #########################################################################
 #                                                                       #
-#                         Grabber-Tank Boot Script                      #
-#                              Caden Perez                              #
+#                       Grabber-Tank Boot Script                        #
+#                            Caden Perez                                #
+#                        CSCE-480 Intro to AI                           #
 #                                                                       #
-#                          CSCE-480 Intro to AI                         #
-#                              Final Project                            #
+#    Boot sequence: Pre-generated data is used to compare with image    #
+#    values that will be received from the RPi camera. Motors and       #
+#               sensors will be initialized and calibrated.             #
 #                                                                       #
 #########################################################################
 
@@ -14,11 +16,6 @@ import cv2
 import RPi.GPIO as GPIO
 from picamera import PiCamera
 import utime
-
-# ---------------------------- CALIBRATION ---------------------------- #
-# Following block is the booty sequence. Pre-generated data is used to
-# compare with image values that will be received from the RPi camera.
-# Motors and sensors will be initialized and calibrated.
 
 # Define GPIO pins
 gear_left = 1

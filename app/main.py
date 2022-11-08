@@ -11,7 +11,6 @@
 
 
 import cv2
-import os
 import io
 import socket
 import struct
@@ -27,7 +26,7 @@ server_socket.listen(0)
 # Accept a single connection and make a file-like object out of it
 connection = server_socket.accept()[0].makefile('rb')
 
-# Display preview/loading image
+# Display preview/loading image while establishing connection
 cv2.imshow('Tank-Grabber Output', cv2.imread('assets/preview.jpeg'))
 
 try:
@@ -63,7 +62,7 @@ finally:
     server_socket.close()
 
     # Display a handsome gentleman
-    cv2.imshow('Tank-Grabber Output', cv2.imread('assets/close.jpeg'))
+    cv2.imshow('Tank-Grabber Output', cv2.imread('assets/close.jpg'))
 
     # Await inevitable destruction
     cv2.waitKey(0)

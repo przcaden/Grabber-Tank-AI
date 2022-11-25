@@ -1,9 +1,9 @@
 
 #########################################################################
 #                                                                       #
-#                       Grabber-Tank Boot Script                        #
-#                            Caden Perez                                #
-#                        CSCE-480 Intro to AI                           #
+#                       Grabber-Tank Init Script                        #
+#                              Caden Perez                              #
+#                         CSCE-480 Intro to AI                          #
 #                                                                       #
 #    Boot sequence: Pre-generated data is used to compare with image    #
 #    values that will be received from the RPi camera. Motors and       #
@@ -13,35 +13,45 @@
 
 
 import cv2
+import rpilib.RPIservo as RPIservo
 import RPi.GPIO as GPIO
 from picamera import PiCamera
+import PiRGBArray
 import utime
 
 # Define GPIO pins
-gear_left = 1
-gear_right = 2
-servo1 = 1
-servo2 = 2
-servo3 = 3
-servo4 = 4
-servo5 = 5
-trigger = 6
-echo = 7
+gear_left_pin = 1
+gear_right_pin = 2
+servo1_pin = 1
+servo2_pin = 2
+servo3_pin = 3
+servo4_pin = 4
+servo5_pin = 5
 
 # Set GPIO input/output modes
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(gear_left, GPIO.OUT)
-GPIO.setup(gear_right, GPIO.OUT)
-GPIO.setup(servo1, GPIO.OUT)
-GPIO.setup(servo2, GPIO.OUT)
-GPIO.setup(servo3, GPIO.OUT)
-GPIO.setup(servo4, GPIO.OUT)
-GPIO.setup(servo5, GPIO.OUT)
-GPIO.setup(trigger, GPIO.OUT)
-GPIO.setup(echo, GPIO.IN)
+
+# Define servo variables
+scGear = RPIservo.ServoCtrl()
+scGear.moveInit()
+P_sc = RPIservo.ServoCtrl()
+P_sc.start()
+T_sc = RPIservo.ServoCtrl()
+T_sc.start()
+H_sc = RPIservo.ServoCtrl()
+H_sc.start()
+G_sc = RPIservo.ServoCtrl()
+G_sc.start()
+
+init_pwm0 = scGear.initPos[0]
+init_pwm1 = scGear.initPos[1]
+init_pwm2 = scGear.initPos[2]
+init_pwm3 = scGear.initPos[3]
+init_pwm4 = scGear.initPos[4]
 
 # Initialize camera
 cam = PiCamera()
+rawCapture = PiRGBArray(cam, size=(640, 480))
 cam.framerate = 32
 cam.rotation = 0
 cam.hflip = False
@@ -54,20 +64,10 @@ img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 object_data = cv2.CascadeClassifier('object_data.xml')
 
-# Calibrate arm
-def resetMotors():
-    GPIO.output(servo1, True)
-
-# Define ultrasonic sensor reading, prints distance in cm
-def ultra():
-    GPIO.output(trigger, False)
-    utime.sleep_us(5)
-    GPIO.output(trigger, True)
-    utime.sleep_us(5)
-    GPIO.output(trigger, False)
-    while echo.value() == 0:
-        signaloff = utime.ticks_us()
-    while echo.value() == 1:
-        signalon = utime.ticks_us()
-    time = signalon - signaloff
-    return (time * 0.0343) / 2
+# Reset arm to neutral position
+def servoPosInit():
+    scGear.initConfig(0,init_pwm0,1)
+    P_sc.initConfig(1,init_pwm1,1)
+    T_sc.initConfig(2,init_pwm2,1)
+    H_sc.initConfig(3,init_pwm3,1)
+    G_sc.initConfig(4,init_pwm4,1)

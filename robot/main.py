@@ -10,7 +10,6 @@
 #########################################################################
 
 
-import init
 import rpilib.move as move
 import rpilib.RPIservo as RPIservo
 import rpilib.ledstrip as ledstrip
@@ -20,12 +19,11 @@ import cv2
 import RPi.GPIO as GPIO
 import io
 import socket
-import os
-import websockets
 import struct
 import time
 import threading
 import Adafruit_PCA9685
+from picamera import PiCamera
 
 machine_name = socket.gethostname()
 IPV4 = socket.gethostbyname(machine_name)
@@ -37,6 +35,49 @@ GPIO.setmode(GPIO.BCM)
 client_socket = socket.socket()
 client_socket.connect((IPV4, 8000))
 connection = client_socket.makefile('wb')
+
+# Set GPIO input/output modes
+GPIO.setmode(GPIO.BCM)
+
+# Define servo variables
+scGear = RPIservo.ServoCtrl()
+scGear.moveInit()
+P_sc = RPIservo.ServoCtrl()
+P_sc.start()
+T_sc = RPIservo.ServoCtrl()
+T_sc.start()
+H_sc = RPIservo.ServoCtrl()
+H_sc.start()
+G_sc = RPIservo.ServoCtrl()
+G_sc.start()
+
+init_pwm0 = scGear.initPos[0]
+init_pwm1 = scGear.initPos[1]
+init_pwm2 = scGear.initPos[2]
+init_pwm3 = scGear.initPos[3]
+init_pwm4 = scGear.initPos[4]
+
+# Initialize camera
+cam = PiCamera()
+cam.framerate = 32
+cam.rotation = 0
+cam.hflip = False
+cam.vflip = True
+cam.resolution = (500, 480)
+
+# Gather data for AI training / image comparisons
+img = cv2.imread('object.jpg')
+img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+object_data = cv2.CascadeClassifier('object_data.xml')
+
+# Reset arm to neutral position
+def servoPosInit():
+    scGear.initConfig(0,init_pwm0,1)
+    P_sc.initConfig(1,init_pwm1,1)
+    T_sc.initConfig(2,init_pwm2,1)
+    H_sc.initConfig(3,init_pwm3,1)
+    G_sc.initConfig(4,init_pwm4,1)
 
 # Receives image data from the established stream to the PC client.
 def stream_request(stream):
@@ -176,12 +217,12 @@ def stream_request(stream):
 
 ####################################### MAIN METHOD ####################################### 
 
-def main():
+def main_logic():
     # Reset arm to neutral position
-    init.servoPosInit()
+    servoPosInit()
 
     # Start preview and warm up camera for 2 seconds
-    init.cam.start_preview()
+    cam.start_preview()
     time.sleep(2)
 
     # Construct a stream to hold image data
@@ -196,7 +237,7 @@ def main():
     arrow, row, col = 0
     speed_set = 30
 
-    for foo in init.cam.capture_continuous(stream, 'jpeg'):
+    for foo in cam.capture_continuous(stream, 'jpeg'):
         print('test')
         img = stream_request(stream)
         # Send image data to client
@@ -210,11 +251,12 @@ def main():
     base_time = time.time()
     while not verify:
         # Run continuous stream of video from RPi camera
-        for foo in init.cam.capture_continuous(stream, 'jpeg'):
+        for foo in cam.capture_continuous(stream, 'jpeg'):
             # Get image from RPi camera and detect if any objects are in view
             img = stream_request(stream)
+            cv2.imshow(img)
             img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            detected_objects = init.object_data.detectMultiScale(img_gray, minSize=(20, 20))
+            detected_objects = object_data.detectMultiScale(img_gray, minSize=(20, 20))
 
             # Highlight any found objects in the image
             for (x,y,w,h) in detected_objects:
@@ -289,7 +331,6 @@ def main():
 
         # Check if camera capture ended prematurely
         if not goal_finish:
-            init.resetMotors()
             stream = io.BytesIO()
         else: verify = True
 
@@ -314,4 +355,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main_logic()

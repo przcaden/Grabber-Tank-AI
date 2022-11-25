@@ -51,7 +51,6 @@ init_pwm4 = scGear.initPos[4]
 
 # Initialize camera
 cam = PiCamera()
-rawCapture = PiRGBArray(cam, size=(640, 480))
 cam.framerate = 32
 cam.rotation = 0
 cam.hflip = False

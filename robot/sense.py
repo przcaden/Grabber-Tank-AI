@@ -11,7 +11,7 @@
 #########################################################################
 
 import RPi.GPIO as GPIO
-import utime
+import time
 
 Tr = 11
 Ec = 8
@@ -40,16 +40,16 @@ def tracking():
 def ultra():
     for i in range(5):  # remove invalid test results
         GPIO.output(Tr, GPIO.LOW)
-        utime.sleep(0.000002)
+        time.sleep(0.000002)
         GPIO.output(Tr, GPIO.HIGH)
-        utime.sleep(0.000015)
+        time.sleep(0.000015)
         GPIO.output(Tr, GPIO.LOW)
         while not GPIO.input(Ec):
             pass
-        t1 = utime.time()
+        t1 = time.time()
         while GPIO.input(Ec):
             pass
-        t2 = utime.time()
+        t2 = time.time()
         dist = (t2-t1)*340/2
         if dist > 9 and i < 4:  # 5 consecutive times are invalid data, return the last test data
             continue

@@ -16,8 +16,6 @@ import cv2
 import rpilib.RPIservo as RPIservo
 import RPi.GPIO as GPIO
 from picamera import PiCamera
-import PiRGBArray
-import utime
 
 # Define GPIO pins
 gear_left_pin = 1

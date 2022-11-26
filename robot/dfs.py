@@ -9,10 +9,9 @@
 #                                                                       #
 #########################################################################
 
-import init
 import sense
 import rpilib.move as move
-import utime
+import time
 
 speed_set = 60
 
@@ -24,8 +23,8 @@ class Path:
         turns = []
 
     # Log a new time between turns
-    def newTime(self, cur_time, base_time):
-        cur_time = utime.time()
+    def newTime(self, base_time):
+        cur_time = time.time()
         self.times.append(cur_time - base_time)
         base_time = cur_time
         return base_time

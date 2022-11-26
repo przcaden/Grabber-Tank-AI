@@ -277,8 +277,7 @@ def main_logic():
                     row, col = path.dfs(row, col, arrow, detected_objects, img)
                     
                 elif status == 'redirect_left':
-                    cur_time = time.time()
-                    path.newTime(cur_time, base_time)
+                    path.newTime(base_time)
                     move.move(speed_set, 'no', 'left', 0.25)
                     approaching = True
 

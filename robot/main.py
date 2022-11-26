@@ -87,6 +87,7 @@ def stream_request(stream):
     # Rewind stream and receive image
     stream.seek(0)
     img = stream.read()
+    print('img type: ' + str(type(img)))
     return img
 
 

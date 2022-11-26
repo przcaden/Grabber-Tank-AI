@@ -33,7 +33,8 @@ GPIO.setmode(GPIO.BCM)
 
 # Connect client to PC over local wifi (must be the same network/IPV4)
 client_socket = socket.socket()
-client_socket.connect((IPV4, 8000))
+print('ipv4: ' + str(IPV4))
+client_socket.connect((IPV4, 5000))
 connection = client_socket.makefile('wb')
 
 # Set GPIO input/output modes

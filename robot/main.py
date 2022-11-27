@@ -26,8 +26,7 @@ import Adafruit_PCA9685
 from picamera import PiCamera
 
 # Connect client to PC over local wifi (must be the same network/IPV4)
-machine_name = socket.gethostname()
-IPV4 = socket.gethostbyname(machine_name)
+IPV4 = '192.168.69.108'
 port = 5000
 client_socket = socket.socket()
 client_socket.connect((IPV4, port))

@@ -63,10 +63,10 @@ cam.vflip = True
 cam.resolution = (500, 480)
 
 # Gather data for AI training / image comparisons
-img = cv2.imread('object.jpg')
-img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-object_data = cv2.CascadeClassifier('object_data.xml')
+# img = cv2.imread('object.jpg')
+# img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+# img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+# object_data = cv2.CascadeClassifier('object_data.xml')
 
 # Reset arm to neutral position
 def servoPosInit():

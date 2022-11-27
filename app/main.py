@@ -18,7 +18,6 @@ from PIL import Image
 # Attach server connection to robot over local wifi
 machine_name = socket.gethostname()
 IPV4 = socket.gethostbyname(machine_name)
-print(IPV4)
 port = 5000
 server_socket = socket.socket()
 server_socket.bind((IPV4, port))
@@ -26,7 +25,7 @@ server_socket.listen(0)
 
 # Accept a single connection and make a file-like object out of it
 connection = server_socket.accept()[0].makefile('rb')
-
+print('connection accepted')
 # Display preview/loading image while establishing connection
 # cv2.imshow('Tank-Grabber Output', cv2.imread('assets/preview.jpeg'))
 

@@ -9,25 +9,24 @@
 #                                                                       #
 #########################################################################
 
-
 import cv2
 import io
 import socket
 import struct
 from PIL import Image
 
-IPV4 = socket.gethostbyname()
-
 # Attach server connection to robot over local wifi
+IPV4 = '192.168.69.108'
+port = 5000
 server_socket = socket.socket()
-server_socket.bind((IPV4, 8000))
+server_socket.bind((IPV4, port))
 server_socket.listen(0)
 
 # Accept a single connection and make a file-like object out of it
 connection = server_socket.accept()[0].makefile('rb')
 
 # Display preview/loading image while establishing connection
-cv2.imshow('Tank-Grabber Output', cv2.imread('assets/preview.jpeg'))
+# cv2.imshow('Tank-Grabber Output', cv2.imread('assets/preview.jpeg'))
 
 # Run unending connection to robot and display its RPi video
 try:

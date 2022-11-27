@@ -25,20 +25,17 @@ import threading
 import Adafruit_PCA9685
 from picamera import PiCamera
 
+# Connect client to PC over local wifi (must be the same network/IPV4)
 machine_name = socket.gethostname()
 IPV4 = socket.gethostbyname(machine_name)
-
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
-
-# Connect client to PC over local wifi (must be the same network/IPV4)
+port = 5000
 client_socket = socket.socket()
-print('ipv4: ' + str(IPV4))
-client_socket.connect((IPV4, 5000))
+client_socket.connect((IPV4, port))
 connection = client_socket.makefile('wb')
 
 # Set GPIO input/output modes
 GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
 
 # Define servo variables
 scGear = RPIservo.ServoCtrl()

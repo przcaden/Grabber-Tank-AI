@@ -155,7 +155,9 @@ def main_logic():
     object_in_hand = False
     goal_finish = False
     verify = False
-    arrow, row, col = 0
+    arrow = 0
+    row = 0
+    col = 0
     speed_set = 30
     for foo in cam.capture_continuous(stream, 'jpeg'):
         print('test')

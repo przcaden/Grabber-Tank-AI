@@ -32,6 +32,7 @@ client_socket.connect((IPV4, port))
 connection = client_socket.makefile('wb')
 
 # Set GPIO input/output modes
+move.setup()
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
@@ -164,7 +165,7 @@ def main_logic():
         img = stream_request(stream)
         # Send image data to client
         connection.write(img)
-        move(10, 'forward', 'no', 0)
+        move.move(10, 'forward', 'no', 0)
 
         # Reset the stream for the next capture
         stream.seek(0)

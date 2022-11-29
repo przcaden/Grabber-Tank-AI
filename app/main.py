@@ -18,6 +18,7 @@ from PIL import Image
 # Attach server connection to robot over local wifi
 machine_name = socket.gethostname()
 IPV4 = socket.gethostbyname(machine_name)
+print('On network IP ' + IPV4)
 port = 5000
 server_socket = socket.socket()
 server_socket.bind((IPV4, port))

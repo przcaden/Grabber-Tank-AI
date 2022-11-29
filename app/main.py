@@ -27,8 +27,6 @@ server_socket.listen(0)
 # Accept a single connection and make a file-like object out of it
 connection = server_socket.accept()[0].makefile('rb')
 print('connection accepted')
-# Display preview/loading image while establishing connection
-# cv2.imshow('Tank-Grabber Output', cv2.imread('assets/preview.jpeg'))
 
 # Run unending connection to robot and display its RPi video
 try:

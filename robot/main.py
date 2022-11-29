@@ -19,6 +19,7 @@ import io
 import socket
 import struct
 from time import time
+from time import sleep
 import threading
 import Adafruit_PCA9685
 from picamera import PiCamera
@@ -144,7 +145,7 @@ def main_logic():
 
     # Start preview and warm up camera for 2 seconds
     cam.start_preview()
-    time.sleep(2)
+    sleep(2)
 
     # Construct a stream to hold image data
     stream = io.BytesIO()

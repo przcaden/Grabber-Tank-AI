@@ -12,15 +12,13 @@
 
 import rpilib.move as move
 import rpilib.RPIservo as RPIservo
-import rpilib.ledstrip as ledstrip
-import dfs
 import sense
 import cv2
 import RPi.GPIO as GPIO
 import io
 import socket
 import struct
-import time
+from time import time
 import threading
 import Adafruit_PCA9685
 from picamera import PiCamera
@@ -76,7 +74,57 @@ def servoPosInit():
     H_sc.initConfig(3,init_pwm3,1)
     G_sc.initConfig(4,init_pwm4,1)
 
-# Receives image data from the established stream to the PC client.
+# Path-finding class
+class Path:
+    def __init__(self):
+        self.directions = [ [-1,0], [0,1], [1,0], [0,-1] ]
+        self.visited = {}
+        self.times = []
+        self.turns = []
+
+    # Log a new time between turns
+    def newTime(self, base_time):
+        cur_time = time()
+        self.times.append(cur_time - base_time)
+        return cur_time
+
+    # Log a new turn
+    def newTurn(self, t):
+        self.turns.append(t)
+
+    # Detect if an object or wall is in view and decide what action to take
+    def wallDetected(detected_objects, img):
+        dis = sense.ultra() # distance in cm
+
+        if dis < 3 and dis > 1:
+            move.motorStop() # stop moving
+            if len(detected_objects) > 0:
+                max_size = 0
+                for x in detected_objects:
+                    if x.size() > max_size:
+                        closest_object = x
+                x = closest_object.x
+                w = closest_object.w
+
+                # Object detected, change direction to approach object
+                if x > (img.x/2) + w:
+                    return 'redirect_left'
+                if x < (img.x/2) - w:
+                    return 'redirect_right'
+
+                # If object is centered, opt to grab it
+                elif x >= (img.x/2) - w and x <= (img.x/2) + w:
+                    return 'grab'
+
+            # Wall detected
+            else:
+                return 'wall'
+
+        # If no object or wall detected, carry on
+        return 'none'
+
+
+# Receives image data from the established stream with the PC client.
 def stream_request(stream):
     # Write length of capture to the stream and flush to ensure it's sent
     connection.write(struct.pack('<L', stream.tell()))
@@ -88,7 +136,7 @@ def stream_request(stream):
     return img
 
 
-####################################### MAIN METHOD ####################################### 
+####################################### MAIN LOGIC METHOD ####################################### 
 
 def main_logic():
     # Reset arm to neutral position
@@ -102,8 +150,7 @@ def main_logic():
     stream = io.BytesIO()
 
     # Declare algorithm variables
-    path = dfs.Path()
-    led = ledstrip.LED()
+    path = Path()
     object_in_hand = False
     goal_finish = False
     verify = False
@@ -114,117 +161,111 @@ def main_logic():
         img = stream_request(stream)
         # Send image data to client
         connection.write(img)
+        move(10, 'forward', 'no', 0)
 
         # Reset the stream for the next capture
         stream.seek(0)
         stream.truncate()
     print('finished first loop')
 
-    # # Main AI running block
-    # base_time = time.time()
-    # while not verify:
-    #     # Run continuous stream of video from RPi camera
-    #     for foo in cam.capture_continuous(stream, 'jpeg'):
-    #         # Get image from RPi camera and detect if any objects are in view
-    #         img = stream_request(stream)
-    #         cv2.imshow(img)
-    #         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    #         detected_objects = object_data.detectMultiScale(img_gray, minSize=(20, 20))
+    # Main AI running block
+    base_time = time()
+    dfs_time = time()
+    while not verify:
+        # Run continuous stream of video from RPi camera
+        for foo in cam.capture_continuous(stream, 'jpeg'):
+            # Get image from RPi camera and detect if any objects are in view
+            img = stream_request(stream)
+            cv2.imshow(img)
+            img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            detected_objects = []
+            # detected_objects = object_data.detectMultiScale(img_gray, minSize=(20, 20))
 
-    #         # Highlight any found objects in the image
-    #         for (x,y,w,h) in detected_objects:
-    #             img = cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0), 2)
+            # Highlight any found objects in the image
+            for (x,y,w,h) in detected_objects:
+                img = cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0), 2)
 
-    #         # Create a status flag depending on distance from detected objects or walls
-    #         status = path.wallDetected(detected_objects, img)
+            # Create a status flag depending on distance from detected objects or walls
+            status = path.wallDetected(detected_objects, img)
 
-    #         # Perform decisionmaking based on the status flag if an object has not been picked up
-    #         if not object_in_hand:
-    #             if len(detected_objects) > 0:
-    #                 led.colorWipe(255, 0, 0) # display red LED
+            # Generate string representation for node in path
+            key = str(row) + ',' + str(col)
 
-    #             # No wall or object detected, continue moving forward
-    #             if status == 'none':
-    #                 # turn off LED
-    #                 row, col = path.dfs(row, col, arrow, detected_objects, img)
-                    
-    #             elif status == 'redirect_left':
-    #                 path.newTime(base_time)
-    #                 move.move(speed_set, 'no', 'left', 0.25)
-    #                 approaching = True
+            # Check if node has been traversed
+            if key not in path.visited and time() > dfs_time + 0.05:
+                path.visited.add(key)
 
-    #             elif status == 'redirect_right':
-    #                 cur_time = time.time()
-    #                 base_time = path.newTime(cur_time, base_time)
-    #                 move(speed_set, 'no', 'right', 0.25)
-    #                 approaching = True
+                # Perform decisionmaking based on the status flag if an object has not been picked up
+                if not object_in_hand:
 
-    #             elif status == 'wall':
-    #                 # this section will require some sort of DFS or decisionmaking
-    #                 move.motorStop()
+                    # No wall or object detected, continue moving forward
+                    if status == 'none':
+                        row, col = path.dfs(row, col, arrow, detected_objects, img)
+                        
+                    elif status == 'redirect_left':
+                        path.newTime(base_time)
+                        move.move(speed_set, 'no', 'left', 0.25)
+                        approaching = True
 
-    #             elif status == 'grab' and not object_in_hand:
-    #                 led.colorWipe(0, 0, 255) # display blue LED
-    #                 grab_sequence = 0
+                    elif status == 'redirect_right':
+                        cur_time = time.time()
+                        base_time = path.newTime(base_time)
+                        move(speed_set, 'no', 'right', 0.25)
+                        approaching = True
 
-    #                 base_time = path.times.pop()
+                    elif status == 'wall':
+                        # this section will require some sort of DFS or decisionmaking
+                        move.motorStop()
 
-    #         # Perform decisionmaking for backtracking if the object has been picked up
-    #         else:
-    #             led.colorWipe(0, 255, 0) # display green LED
-    #             if status == 'wall' or time.time() - base_time <= 0.1:
-    #                 move.motorStop()
+                    elif status == 'grab' and not object_in_hand:
+                        grab_sequence = 0
+                        base_time = path.times.pop()
 
-    #                 # If path has been fully backtracked (is empty) and time has elapsed, place the object back down
-    #                 if not path.turns:
-    #                     drop_sequence = 0
-    #                     goal_finish = True
+                # Perform decisionmaking for backtracking if the object has been picked up
+                else:
+                    if status == 'wall' or time.time() - base_time <= 0.1:
+                        move.motorStop()
 
-    #                 # Otherwise, proceed in backtracking path
-    #                 else:
-    #                     turn = path.turns.pop()
-    #                     base_time = path.times.pop()
+                        # If path has been fully backtracked (is empty) and time has elapsed, place the object back down
+                        if not path.turns:
+                            drop_sequence = 0
+                            goal_finish = True
 
-    #                     # Reverse direction of the original path, since we are moving backwards
-    #                     if turn == 'L':
-    #                         move(speed_set, 'no', 'right', 0.25)
-    #                     else: move(speed_set, 'no', 'left', 0.25)
+                        # Otherwise, proceed in backtracking path
+                        else:
+                            turn = path.turns.pop()
+                            base_time = path.times.pop()
 
-    #             # Continue moving forward otherwise
-    #             else:
-    #                 move(speed_set, 'forward', 'no', 0)
+                            # Reverse direction of the original path, since we are moving backwards
+                            if turn == 'L':
+                                move(speed_set, 'no', 'right', 0.25)
+                            else: move(speed_set, 'no', 'left', 0.25)
 
-    #         # Send image data to client
-    #         connection.write(img)
+                    # Continue moving forward otherwise
+                    else:
+                        move(speed_set, 'forward', 'no', 0)
 
-    #         # Reset the stream for the next capture
-    #         stream.seek(0)
-    #         stream.truncate()
+            # Send image data to client
+            connection.write(img)
 
-    #     # Check if camera capture ended prematurely
-    #     if not goal_finish:
-    #         stream = io.BytesIO()
-    #     else: verify = True
+            # Reset the stream for the next capture
+            stream.seek(0)
+            stream.truncate()
 
-    # # Display party lights
-    # time.sleep(2)
-    # base_time = time.time()
-    # while time.time() < base_time+10:
-    #     led.colorWipe(255, 0, 0) # display red LED
-    #     time.sleep(0.5)
-    #     led.colorWipe(0, 0, 255) # display blue LED
-    #     time.sleep(0.5)
-    #     led.colorWipe(0, 255, 0) # display green LED
-    #     time.sleep(0.5)
+        # Check if camera capture ended prematurely
+        if not goal_finish:
+            stream = io.BytesIO()
+        else: verify = True
 
-    # # Write a length of zero to the stream to signal we're done
-    # connection.write(struct.pack('<L', 0))
+    # Write a length of zero to the stream to signal algorithm is done
+    connection.write(struct.pack('<L', 0))
 
-    # # Code cleanup before closing program
-    # connection.close()
-    # client_socket.close()
-    # move.destroy()
+    # Code cleanup before closing program
+    connection.close()
+    client_socket.close()
+    move.destroy()
 
 
 if __name__ == '__main__':
     main_logic()
+    print ('Hello juicy Wrld')

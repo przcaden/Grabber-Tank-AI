@@ -1,32 +1,22 @@
-# import libraries
-from vidgear.gears import NetGear
 import cv2
+import zmq
+import base64
+import numpy as np
 
-#define netgear client with `receive_mode = True` and default settings
-client = NetGear(receive_mode = True)
+context = zmq.Context()
+footage_socket = context.socket(zmq.SUB)
+footage_socket.bind('tcp://*:5555')
+footage_socket.setsockopt_string(zmq.SUBSCRIBE, np.unicode(''))
 
-# infinite loop
 while True:
-    # receive frames from network
-    frame = client.recv()
+    try:
+        frame = footage_socket.recv_string()
+        img = base64.b64decode(frame)
+        npimg = np.fromstring(img, dtype=np.uint8)
+        source = cv2.imdecode(npimg, 1)
+        cv2.imshow("Stream", source)
+        cv2.waitKey(1)
 
-    # check if frame is None
-    if frame is None:
-        #if True break the infinite loop
+    except KeyboardInterrupt:
+        cv2.destroyAllWindows()
         break
-
-    # do something with frame here
-
-    # Show output window
-    cv2.imshow("Output Frame", frame)
-
-    key = cv2.waitKey(1) & 0xFF
-    # check for 'q' key-press
-    if key == ord("q"):
-        #if 'q' key-pressed break out
-        break
-
-# close output window
-cv2.destroyAllWindows()
-# safely close client
-client.close()

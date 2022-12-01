@@ -1,32 +1,22 @@
-# import libraries
-from vidgear.gears import VideoGear
-from vidgear.gears import NetGear
+import base64
+import cv2
+import zmq
 
-# enable enablePiCamera boolean flag to access PiGear API(Picamera) backend
-stream = VideoGear(enablePiCamera=True).start()
-server = NetGear() #Define netgear server with default settings
+context = zmq.Context()
+footage_socket = context.socket(zmq.PUB)
+footage_socket.connect('tcp://localhost:5555')
 
-# infinite loop until [Ctrl+C] is pressed
+camera = cv2.VideoCapture(0)  # init the camera
+
 while True:
-    try: 
-        frame = stream.read()
-        # read frames
+    try:
+        grabbed, frame = camera.read()  # grab the current frame
+        frame = cv2.resize(frame, (640, 480))  # resize the frame
+        encoded, buffer = cv2.imencode('.jpg', frame)
+        jpg_as_text = base64.b64encode(buffer)
+        footage_socket.send(jpg_as_text)
 
-        # check if frame is None
-        if frame is None:
-            #if True break the infinite loop
-            break
-
-        # do something with frame here
-
-        # send frame to server
-        server.send(frame)
-    
     except KeyboardInterrupt:
-        #break the infinite loop
+        camera.release()
+        cv2.destroyAllWindows()
         break
-
-# safely close video stream
-stream.stop()
-# safely close server
-server.close()

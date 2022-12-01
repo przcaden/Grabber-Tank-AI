@@ -14,6 +14,7 @@ import io
 import socket
 import struct
 from PIL import Image
+import matplotlib.pyplot as pl
 
 # Attach server connection to robot over local wifi
 machine_name = socket.gethostname()
@@ -26,11 +27,12 @@ server_socket.listen(0)
 
 # Accept a single connection and make a file-like object out of it
 connection = server_socket.accept()[0].makefile('rb')
-print('connection accepted')
+print('Connection accepted')
 
 # Run unending connection to robot and display its RPi video
 try:
     img = None
+    pl.axis('off')
     while True:
         # Read the length of the image as a 32-bit unsigned int. If the
         # length is zero, quit the loop
@@ -48,9 +50,11 @@ try:
         
         # Display received image
         if img is None:
-            img = cv2.imshow('Tank-Grabber Output', image)
+            img = pl.imshow(image)
         else:
             img.set_data(image)
+        pl.pause(0.01)
+        pl.draw()
 
         print('Image is %dx%d' % image.size)
         image.verify()
@@ -60,9 +64,6 @@ finally:
     # Close connection
     connection.close()
     server_socket.close()
-
-    # Display a handsome gentleman
-    # cv2.imshow('Tank-Grabber Output', cv2.imread('assets/close.jpg'))
 
     # Await inevitable destruction
     cv2.waitKey(0)

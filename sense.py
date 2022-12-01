@@ -44,6 +44,7 @@ def ultra():
         GPIO.output(Tr, GPIO.HIGH)
         time.sleep(0.000015)
         GPIO.output(Tr, GPIO.LOW)
+        
         while not GPIO.input(Ec):
             pass
         t1 = time.time()
@@ -51,7 +52,9 @@ def ultra():
             pass
         t2 = time.time()
         dist = (t2-t1)*340/2
-        if dist > 9 and i < 4:  # 5 consecutive times are invalid data, return the last test data
+
+        # Check if past 5 iterations have valid data
+        if dist > 9 and i < 4:
             continue
         else:
             return (t2-t1)*340/2

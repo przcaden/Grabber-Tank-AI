@@ -21,11 +21,12 @@ import struct
 from time import time
 from time import sleep
 import threading
+import numpy
 import Adafruit_PCA9685
 from picamera import PiCamera
 
 # Connect client to PC over local wifi (must be the same network/IPV4)
-IPV4 = '172.17.42.248'
+IPV4 = '172.17.43.0'
 port = 5000
 client_socket = socket.socket()
 client_socket.connect((IPV4, port))
@@ -169,8 +170,8 @@ def main_logic():
         print('test')
         img = stream_request(stream)
         # Send image data to client
-        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        connection.write(img)
+        img_gray = cv2.cvtColor(numpy.array(img), cv2.COLOR_BGR2GRAY)
+        connection.write(img_gray)
         
         move.move(10, 'forward', 'no', 0)
 
@@ -189,9 +190,8 @@ def main_logic():
             # Get image from RPi camera and detect if any objects are in view
             img = stream_request(stream)
             cv2.imshow(img)
-            img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            detected_objects = []
-            # detected_objects = object_data.detectMultiScale(img_gray, minSize=(20, 20))
+            img_gray = cv2.cvtColor(numpy.array(img), cv2.COLOR_BGR2GRAY)
+            detected_objects = object_data.detectMultiScale(img_gray, minSize=(20, 20))
 
             # Highlight any found objects in the image
             for (x,y,w,h) in detected_objects:

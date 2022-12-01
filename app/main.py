@@ -62,7 +62,7 @@ finally:
     server_socket.close()
 
     # Display a handsome gentleman
-    cv2.imshow('Tank-Grabber Output', cv2.imread('assets/close.jpg'))
+    # cv2.imshow('Tank-Grabber Output', cv2.imread('assets/close.jpg'))
 
     # Await inevitable destruction
     cv2.waitKey(0)

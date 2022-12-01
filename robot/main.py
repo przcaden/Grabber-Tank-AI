@@ -62,11 +62,8 @@ cam.hflip = False
 cam.vflip = True
 cam.resolution = (500, 480)
 
-# Gather data for AI training / image comparisons
-# img = cv2.imread('object.jpg')
-# img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-# img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-# object_data = cv2.CascadeClassifier('object_data.xml')
+# Gather data for Haar Cascading image recognition
+object_data = cv2.CascadeClassifier('assets/object_cascade.xml')
 
 # Reset arm to neutral position
 def servoPosInit():
@@ -137,8 +134,15 @@ def stream_request(stream):
     print('img type: ' + str(type(img)))
     return img
 
+def grab_sequence(img):
+    grab = 0
 
-####################################### MAIN LOGIC METHOD ####################################### 
+def drop_sequence():
+    arm_lower = 0
+    hand_release = 0
+    servoPosInit()
+
+####################################### MAIN LOGIC METHOD #######################################
 
 def main_logic():
     # Reset arm to neutral position
@@ -160,16 +164,20 @@ def main_logic():
     row = 0
     col = 0
     speed_set = 30
+    
     for foo in cam.capture_continuous(stream, 'jpeg'):
         print('test')
         img = stream_request(stream)
         # Send image data to client
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         connection.write(img)
+        
         move.move(10, 'forward', 'no', 0)
 
         # Reset the stream for the next capture
         stream.seek(0)
         stream.truncate()
+    move.motorStop()
     print('finished first loop')
 
     # Main AI running block
@@ -195,59 +203,67 @@ def main_logic():
             # Generate string representation for node in path
             key = str(row) + ',' + str(col)
 
-            # Check if node has been traversed
-            if key not in path.visited and time() > dfs_time + 0.05:
-                path.visited.add(key)
-
-                # Perform decisionmaking based on the status flag if an object has not been picked up
-                if not object_in_hand:
-
-                    # No wall or object detected, continue moving forward
-                    if status == 'none':
-                        row, col = path.dfs(row, col, arrow, detected_objects, img)
-                        
-                    elif status == 'redirect_left':
-                        path.newTime(base_time)
+            # Perform decisionmaking based on the status flag if an object has not been picked up
+            if not object_in_hand:
+                # Check if node has been traversed (DFS) and robot has traveled for 0.1 seconds
+                if key not in path.visited and time() > dfs_time + 0.1:
+                    path.visited.add(key)
+                    
+                    if status == 'redirect_left':
+                        base_time = path.newTime(base_time)
                         move.move(speed_set, 'no', 'left', 0.25)
-                        approaching = True
+                        arrow = (arrow-1) % 4
 
                     elif status == 'redirect_right':
-                        cur_time = time.time()
                         base_time = path.newTime(base_time)
                         move(speed_set, 'no', 'right', 0.25)
-                        approaching = True
+                        arrow = (arrow+1) % 4
 
                     elif status == 'wall':
-                        # this section will require some sort of DFS or decisionmaking
                         move.motorStop()
+                        while status == 'wall':
+                            move(speed_set, 'no', 'right', 0.25)
+                            arrow = (arrow+1) % 4
+                            status = path.wallDetected()
 
-                    elif status == 'grab' and not object_in_hand:
+                    elif status == 'grab':
+                        move.motorStop()
                         grab_sequence = 0
                         base_time = path.times.pop()
 
-                # Perform decisionmaking for backtracking if the object has been picked up
-                else:
-                    if status == 'wall' or time.time() - base_time <= 0.1:
-                        move.motorStop()
+                elif key in path.visited:
+                    move.motorStop()
+                    move(speed_set, 'no', 'right', 0.25)
+                    arrow = (arrow+1) % 4
 
-                        # If path has been fully backtracked (is empty) and time has elapsed, place the object back down
-                        if not path.turns:
-                            drop_sequence = 0
-                            goal_finish = True
+                # Update tracked direction faced by robot
+                curDirection = path.directions[arrow]
+                row += curDirection[0]
+                col += curDirection[1]
 
-                        # Otherwise, proceed in backtracking path
-                        else:
-                            turn = path.turns.pop()
-                            base_time = path.times.pop()
+            # Perform decisionmaking for backtracking if the object has been picked up
+            else:
+                if status == 'wall' or time.time() - base_time <= 0.1:
+                    move.motorStop()
 
-                            # Reverse direction of the original path, since we are moving backwards
-                            if turn == 'L':
-                                move(speed_set, 'no', 'right', 0.25)
-                            else: move(speed_set, 'no', 'left', 0.25)
+                    # If path has been fully backtracked (is empty) and time has elapsed, place the object back down
+                    if not path.turns:
+                        drop_sequence = 0
+                        goal_finish = True
 
-                    # Continue moving forward otherwise
+                    # Otherwise, proceed in backtracking path
                     else:
-                        move(speed_set, 'forward', 'no', 0)
+                        turn = path.turns.pop()
+                        base_time = path.times.pop()
+
+                        # Reverse direction of the original path, since we are moving backwards
+                        if turn == 'L':
+                            move(speed_set, 'no', 'right', 0.25)
+                        else: move(speed_set, 'no', 'left', 0.25)
+
+                # Continue moving forward otherwise
+                else:
+                    move(speed_set, 'forward', 'no', 0)
 
             # Send image data to client
             connection.write(img)

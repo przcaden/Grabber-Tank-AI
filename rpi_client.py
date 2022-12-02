@@ -131,8 +131,8 @@ def stream_request(stream):
     connection.flush()
     # Rewind stream and receive image
     stream.seek(0)
-    img = stream.read()
-    return img
+    # img = stream.read()
+    # return img
 
 def grab_sequence(img):
     grab = 0
@@ -168,8 +168,9 @@ def main_logic():
     for frame in cam.capture_continuous(stream, 'jpeg'):
         print('test')
         img = stream_request(stream)
-        pim = Image.open(stream)
+        pim = Image.open(stream).convert('RGB')
         nimg = numpy.array(pim)
+        nimg = nimg[:, :, ::-1].copy()
         ocvim = cv2.cvtColor(nimg, cv2.COLOR_BGR2GRAY)
         # Send image data to client
         # img_gray = cv2.cvtColor(img_data, cv2.COLOR_BGR2GRAY)

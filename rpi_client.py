@@ -169,20 +169,15 @@ def main_logic():
     rawCapture = PiRGBArray(cam, size=(640,480))
     
     for frame in cam.capture_continuous(rawCapture, 'jpeg'):
-        print('test')
-        img = frame.array
-        # img = stream_request(stream)
-        cv2.imshow('img', img)
-        # num_bytes = len(img)
-
-        # img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img = stream_request(stream)
+        img = img[:, :,::-1] # convert RGB to BGR
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         # Send image data to client
-        # img_gray = cv2.cvtColor(img_data, cv2.COLOR_BGR2GRAY)
-        # connection.write(img_gray)
+        connection.write(img_gray)
 
         # Reset the stream for the next capture
-        # stream.seek(0)
-        # stream.truncate()
+        stream.seek(0)
+        stream.truncate()
     move.motorStop()
     print('finished first loop')
 

@@ -23,6 +23,7 @@ from time import sleep
 import threading
 import numpy
 from picamera import PiCamera
+import PiRGBArray
 
 # Connect client to PC over local wifi (must be the same network/IPV4)
 IPV4 = '172.17.43.0'
@@ -164,14 +165,16 @@ def main_logic():
     row = 0
     col = 0
     speed_set = 30
+
+    rawCapture = PiRGBArray(cam, size=(640, 480))
     
     for frame in cam.capture_continuous(stream, 'jpeg'):
         print('test')
         img = stream_request(stream)
-        img_data = frame.array
+        img_data = numpy.array(img)
         # Send image data to client
         img_gray = cv2.cvtColor(img_data, cv2.COLOR_BGR2GRAY)
-        connection.write(img_data)
+        connection.write(img_gray)
 
         # Reset the stream for the next capture
         stream.seek(0)

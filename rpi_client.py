@@ -169,9 +169,9 @@ def main_logic():
     
     for frame in cam.capture_continuous(stream, 'jpeg'):
         img = stream_request(stream)
-        img = base64.b64decode(frame)
-        npimg = numpy.fromstring(img, dtype=np.uint8)
-        # img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img = base64.b64decode(img)
+        npimg = numpy.fromstring(img, dtype=numpy.uint8)
+        img_gray = cv2.cvtColor(npimg, cv2.COLOR_BGR2GRAY)
         # Send image data to client
         # connection.write(img_gray)
 

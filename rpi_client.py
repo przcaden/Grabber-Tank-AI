@@ -30,9 +30,9 @@ import base64
 # Connect client to PC over local wifi (must be the same network/IPV4)
 IPV4 = '172.17.43.0'
 port = 5000
-client_socket = socket.socket()
-client_socket.connect((IPV4, port))
-connection = client_socket.makefile('wb')
+# client_socket = socket.socket()
+# client_socket.connect((IPV4, port))
+# connection = client_socket.makefile('wb')
 
 # Set GPIO input/output modes
 move.setup()
@@ -127,14 +127,14 @@ class Path:
 
 
 # Receives image data from the established stream with the PC client.
-def stream_request(stream):
-    # Write length of capture to the stream and flush to ensure it's sent
-    connection.write(struct.pack('<L', stream.tell()))
-    connection.flush()
-    # Rewind stream and receive image
-    stream.seek(0)
-    img = stream.read()
-    return img
+# def stream_request(stream):
+#     # Write length of capture to the stream and flush to ensure it's sent
+#     connection.write(struct.pack('<L', stream.tell()))
+#     connection.flush()
+#     # Rewind stream and receive image
+#     stream.seek(0)
+#     img = stream.read()
+#     return img
 
 def grab_sequence(img):
     grab = 0
@@ -170,12 +170,12 @@ def main_logic():
     rawCapture = PiRGBArray(cam, size=(500,480))
     
     for frame in cam.capture_continuous(rawCapture, 'jpeg'):
-        # img = stream_request(stream)
         img = frame.array
         cv2.imshow('frame', img)
         rawCapture.truncate(0)
         # Send image data to client
-        # connection.write(img_gray)
+        # img = stream_request(stream)
+        # connection.write(img)
 
         # Reset the stream for the next capture
         # stream.seek(0)

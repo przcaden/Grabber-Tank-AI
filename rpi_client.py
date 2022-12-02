@@ -10,8 +10,8 @@
 #########################################################################
 
 
-import rpilib.move as move
-import rpilib.RPIservo as RPIservo
+import adeeptlib.move as move
+import adeeptlib.RPIservo as RPIservo
 import sense
 import cv2
 import RPi.GPIO as GPIO
@@ -22,7 +22,6 @@ from time import time
 from time import sleep
 import threading
 import numpy
-import Adafruit_PCA9685
 from picamera import PiCamera
 
 # Connect client to PC over local wifi (must be the same network/IPV4)

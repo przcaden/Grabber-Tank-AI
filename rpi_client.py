@@ -23,6 +23,7 @@ from time import sleep
 import threading
 import numpy
 from picamera import PiCamera
+from PIL import Image
 
 # Connect client to PC over local wifi (must be the same network/IPV4)
 IPV4 = '172.17.43.0'
@@ -131,7 +132,6 @@ def stream_request(stream):
     # Rewind stream and receive image
     stream.seek(0)
     img = stream.read()
-    print('img type: ' + str(type(img)))
     return img
 
 def grab_sequence(img):
@@ -168,10 +168,12 @@ def main_logic():
     for frame in cam.capture_continuous(stream, 'jpeg'):
         print('test')
         img = stream_request(stream)
-        img_data = numpy.array(img)
+        pim = Image.open(stream)
+        nimg = numpy.array(pim)
+        ocvim = cv2.cvtColor(nimg, cv2.COLOR_BGR2GRAY)
         # Send image data to client
-        img_gray = cv2.cvtColor(img_data, cv2.COLOR_BGR2GRAY)
-        connection.write(img_gray)
+        # img_gray = cv2.cvtColor(img_data, cv2.COLOR_BGR2GRAY)
+        connection.write(ocvim)
 
         # Reset the stream for the next capture
         stream.seek(0)

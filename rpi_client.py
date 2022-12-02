@@ -165,14 +165,13 @@ def main_logic():
     col = 0
     speed_set = 30
     
-    for foo in cam.capture_continuous(stream, 'jpeg'):
+    for frame in cam.capture_continuous(stream, 'jpeg'):
         print('test')
         img = stream_request(stream)
+        img_data = frame.array
         # Send image data to client
-        img_gray = cv2.cvtColor(numpy.array(img), cv2.COLOR_BGR2GRAY)
-        connection.write(img_gray)
-        
-        move.move(10, 'forward', 'no', 0)
+        img_gray = cv2.cvtColor(img_data, cv2.COLOR_BGR2GRAY)
+        connection.write(img_data)
 
         # Reset the stream for the next capture
         stream.seek(0)
@@ -185,10 +184,11 @@ def main_logic():
     dfs_time = time()
     while not verify:
         # Run continuous stream of video from RPi camera
-        for foo in cam.capture_continuous(stream, 'jpeg'):
+        for frame in cam.capture_continuous(stream, 'jpeg'):
             # Get image from RPi camera and detect if any objects are in view
             img = stream_request(stream)
-            cv2.imshow(img)
+            img_data = frame.array
+            cv2.imshow(img_data)
             img_gray = cv2.cvtColor(numpy.array(img), cv2.COLOR_BGR2GRAY)
             detected_objects = object_data.detectMultiScale(img_gray, minSize=(20, 20))
 

@@ -164,21 +164,24 @@ def main_logic():
     row = 0
     col = 0
     speed_set = 30
+
+    rawCapture = 
     
-    for frame in cam.capture_continuous(stream, 'jpeg'):
+    for frame in cam.capture_continuous(rawCapture, 'jpeg'):
         print('test')
-        img = stream_request(stream)
-        pim = Image.open(stream).convert('RGB')
-        nimg = numpy.array(pim)
-        nimg = nimg[:, :, ::-1].copy()
-        ocvim = cv2.cvtColor(nimg, cv2.COLOR_BGR2GRAY)
+        img = frame.array
+        # img = stream_request(stream)
+        cv2.imshow('img', img)
+        # num_bytes = len(img)
+
+        # img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         # Send image data to client
         # img_gray = cv2.cvtColor(img_data, cv2.COLOR_BGR2GRAY)
-        connection.write(ocvim)
+        # connection.write(img_gray)
 
         # Reset the stream for the next capture
-        stream.seek(0)
-        stream.truncate()
+        # stream.seek(0)
+        # stream.truncate()
     move.motorStop()
     print('finished first loop')
 

@@ -24,7 +24,7 @@ import threading
 import numpy
 from picamera import PiCamera
 from PIL import Image
-import PiRGBArray
+from picamera.array import PiRGBArray
 
 # Connect client to PC over local wifi (must be the same network/IPV4)
 IPV4 = '172.17.43.0'

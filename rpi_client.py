@@ -165,10 +165,8 @@ def main_logic():
     row = 0
     col = 0
     speed_set = 30
-
-    rawCapture = PiRGBArray(cam, size=(640,480))
     
-    for frame in cam.capture_continuous(rawCapture, 'jpeg'):
+    for frame in cam.capture_continuous(stream, 'jpeg'):
         img = stream_request(stream)
         img = img[:, :,::-1] # convert RGB to BGR
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

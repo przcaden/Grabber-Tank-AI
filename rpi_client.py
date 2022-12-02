@@ -166,12 +166,14 @@ def main_logic():
     row = 0
     col = 0
     speed_set = 30
+
+    rawCapture = PiRGBArray(cam, size=(640,480))
     
-    for frame in cam.capture_continuous(stream, 'jpeg'):
-        img = stream_request(stream)
-        img = base64.b64decode(img)
-        npimg = numpy.fromstring(img, dtype=numpy.uint8)
-        img_gray = cv2.cvtColor(npimg, cv2.COLOR_BGR2GRAY)
+    for frame in cam.capture_continuous(rawCapture, 'jpeg'):
+        # img = stream_request(stream)
+        img = frame.array
+        cv2.imshow('frame', img)
+        rawCapture.truncate(0)
         # Send image data to client
         # connection.write(img_gray)
 

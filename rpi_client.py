@@ -132,8 +132,8 @@ def stream_request(stream):
     connection.flush()
     # Rewind stream and receive image
     stream.seek(0)
-    # img = stream.read()
-    # return img
+    img = stream.read()
+    return img
 
 def grab_sequence(img):
     grab = 0

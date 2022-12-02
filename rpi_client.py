@@ -167,7 +167,7 @@ def main_logic():
     col = 0
     speed_set = 30
 
-    rawCapture = PiRGBArray(cam, size=(640,480))
+    rawCapture = PiRGBArray(cam, size=(500,480))
     
     for frame in cam.capture_continuous(rawCapture, 'jpeg'):
         # img = stream_request(stream)

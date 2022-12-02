@@ -24,6 +24,7 @@ import threading
 import numpy
 from picamera import PiCamera
 from PIL import Image
+import PiRGBArray
 
 # Connect client to PC over local wifi (must be the same network/IPV4)
 IPV4 = '172.17.43.0'
@@ -165,7 +166,7 @@ def main_logic():
     col = 0
     speed_set = 30
 
-    rawCapture = 
+    rawCapture = PiRGBArray(cam, size=(640,480))
     
     for frame in cam.capture_continuous(rawCapture, 'jpeg'):
         print('test')

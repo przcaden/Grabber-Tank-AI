@@ -178,8 +178,8 @@ def main_logic():
         # connection.write(img_gray)
 
         # Reset the stream for the next capture
-        stream.seek(0)
-        stream.truncate()
+        # stream.seek(0)
+        # stream.truncate()
     move.motorStop()
     print('finished first loop')
 

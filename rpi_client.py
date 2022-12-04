@@ -63,7 +63,7 @@ cam.framerate = 32
 cam.rotation = 0
 cam.hflip = False
 cam.vflip = True
-cam.resolution = (500, 480)
+cam.resolution = (512, 480)
 
 # Gather data for Haar Cascading image recognition
 object_data = cv2.CascadeClassifier('assets/object_cascade.xml')
@@ -150,10 +150,6 @@ def main_logic():
     # Reset arm to neutral position
     servoPosInit()
 
-    # Start preview and warm up camera for 2 seconds
-    cam.start_preview()
-    sleep(2)
-
     # Construct a stream to hold image data
     stream = io.BytesIO()
 
@@ -167,34 +163,34 @@ def main_logic():
     col = 0
     speed_set = 30
 
-    rawCapture = PiRGBArray(cam, size=(500,480))
+    rawCapture = PiRGBArray(cam, size=(512,480))
+    lower = (155,155,100)
+    upper = (179,255,255)
+    kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9,9))
+    kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15,15))
     
-    for frame in cam.capture_continuous(rawCapture, 'jpeg'):
+    for frame in cam.capture_continuous(rawCapture, resize=(512,480), format="bgr"):
         img = frame.array
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)    
-        imagem = (255-gray)
-        ret,thresh = cv2.threshold(imagem,120,200,1)
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        thresh = cv2.inRange(hsv, lower, upper)
         # apply morphology
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9,9))
-        clean = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15,15))
-        clean = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        clean = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel1)
+        clean = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel2)
 
         # get external contours
         contours = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours = contours[0] if len(contours) == 2 else contours[1]
+        detected_objects = contours[0] if len(contours) == 2 else contours[1]
 
-        result1 = img.copy()
-        result2 = img.copy()
-        for c in contours:
-            cv2.drawContours(result1,[c],0,(0,0,0),2)
+        for c in detected_objects:
+            cv2.drawContours(img,[c],0,(0,0,0),2)
             # get rotated rectangle from contour
             rot_rect = cv2.minAreaRect(c)
             box = cv2.boxPoints(rot_rect)
-            box = np.int0(box)
+            box = numpy.int0(box)
             # draw rotated rectangle on copy of img
-            cv2.drawContours(result2,[box],0,(0,0,0),2)
-            cv2.imshow('frame', img)
+            cv2.drawContours(img,[box],0,(0,0,0),2)
+        cv2.imshow('frame', clean)
+        cv2.waitKey(1)
         rawCapture.truncate(0)
         # Send image data to client
         # img = stream_request(stream)

@@ -27,13 +27,6 @@ from PIL import Image
 from picamera.array import PiRGBArray
 import base64
 
-# Connect client to PC over local wifi (must be the same network/IPV4)
-IPV4 = '172.17.43.0'
-port = 5000
-# client_socket = socket.socket()
-# client_socket.connect((IPV4, port))
-# connection = client_socket.makefile('wb')
-
 # Set GPIO input/output modes
 move.setup()
 GPIO.setmode(GPIO.BCM)
@@ -63,10 +56,15 @@ cam.framerate = 32
 cam.rotation = 0
 cam.hflip = False
 cam.vflip = True
-cam.resolution = (512, 480)
+CAM_RES = (320,240)
+cam.resolution = CAM_RES
+rawCapture = PiRGBArray(cam, size=CAM_RES)
 
-# Gather data for Haar Cascading image recognition
-object_data = cv2.CascadeClassifier('assets/object_cascade.xml')
+# Define bounds and filters for object detection
+red_lower = (155,155,100)
+red_upper = (179,255,255)
+kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9,9))
+kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15,15))
 
 # Reset arm to neutral position
 def servoPosInit():
@@ -125,17 +123,6 @@ class Path:
         # If no object or wall detected, carry on
         return 'none'
 
-
-# Receives image data from the established stream with the PC client.
-# def stream_request(stream):
-#     # Write length of capture to the stream and flush to ensure it's sent
-#     connection.write(struct.pack('<L', stream.tell()))
-#     connection.flush()
-#     # Rewind stream and receive image
-#     stream.seek(0)
-#     img = stream.read()
-#     return img
-
 def grab_sequence(img):
     grab = 0
 
@@ -143,15 +130,45 @@ def drop_sequence():
     arm_lower = 0
     hand_release = 0
     servoPosInit()
+    
+# Given a snapshot, detect any red cube-like objects
+def findObjects(img):
+    # Get image's HSV color space
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    
+    # Gets colors in range of red in image
+    thresh = cv2.inRange(hsv, red_lower, red_upper)
+    
+    # Generate morphology filters
+    clean = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel1)
+    clean = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel2)
+
+    # Get any external contours containg the color red
+    contours = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours = contours[0] if len(contours) == 2 else contours[1]
+
+    # Detect if detected red is a cube shape
+    detected_objects = []
+    closest_obj = None
+    for c in contours:
+        epsilon = 0.05  * cv2.arcLength(c, True)
+        if (closest_obj is None or cv2.contourArea(c) > cv2.contourArea(closest_obj)) and len(cv2.approxPolyDP(c, epsilon, True)) == 4:
+                closest_obj = c
+    
+    # Write largest detected red object to image
+    if closest_obj is not None:
+        rot_rect = cv2.minAreaRect(closest_obj)
+        box = cv2.boxPoints(rot_rect)
+        box = numpy.int0(box)
+        cv2.drawContours(img,[box],0,(0,0,0),2)
+        
+    return img, closest_obj
 
 ####################################### MAIN LOGIC METHOD #######################################
 
 def main_logic():
     # Reset arm to neutral position
     servoPosInit()
-
-    # Construct a stream to hold image data
-    stream = io.BytesIO()
 
     # Declare algorithm variables
     path = Path()
@@ -162,62 +179,60 @@ def main_logic():
     row = 0
     col = 0
     speed_set = 30
-
-    rawCapture = PiRGBArray(cam, size=(512,480))
-    lower = (155,155,100)
-    upper = (179,255,255)
-    kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9,9))
-    kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15,15))
     
-    for frame in cam.capture_continuous(rawCapture, resize=(512,480), format="bgr"):
-        img = frame.array
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        thresh = cv2.inRange(hsv, lower, upper)
-        # apply morphology
-        clean = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel1)
-        clean = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel2)
-
-        # get external contours
-        contours = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        detected_objects = contours[0] if len(contours) == 2 else contours[1]
-
-        for c in detected_objects:
-            cv2.drawContours(img,[c],0,(0,0,0),2)
-            # get rotated rectangle from contour
-            rot_rect = cv2.minAreaRect(c)
-            box = cv2.boxPoints(rot_rect)
-            box = numpy.int0(box)
-            # draw rotated rectangle on copy of img
-            cv2.drawContours(img,[box],0,(0,0,0),2)
-        cv2.imshow('frame', clean)
-        cv2.waitKey(1)
-        rawCapture.truncate(0)
-        # Send image data to client
-        # img = stream_request(stream)
-        # connection.write(img)
-
-        # Reset the stream for the next capture
-        # stream.seek(0)
-        # stream.truncate()
-    move.motorStop()
-    print('finished first loop')
+    test = True
+    if test:
+        for frame in cam.capture_continuous(rawCapture, resize=CAM_RES, format="bgr", use_video_port=True):
+            # Get a snapshot from RPi camera and 
+            img = frame.array
+            img, closest_obj = findObjects(img)
+                
+            # Display edited image
+            cv2.imshow('Stream', img)
+            cv2.waitKey(1)
+            rawCapture.truncate(0)
 
     # Main AI running block
     base_time = time()
     dfs_time = time()
     while not verify:
         # Run continuous stream of video from RPi camera
-        for frame in cam.capture_continuous(stream, 'jpeg'):
-            # Get image from RPi camera and detect if any objects are in view
+        for frame in cam.capture_continuous(rawCapture, CAM_RES, format="bgr"):
+            # Get a snapshot from RPi camera and detect if any objects are in view
             img = stream_request(stream)
-            img_data = frame.array
-            cv2.imshow(img_data)
-            img_gray = cv2.cvtColor(numpy.array(img), cv2.COLOR_BGR2GRAY)
-            detected_objects = object_data.detectMultiScale(img_gray, minSize=(20, 20))
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            thresh = cv2.inRange(hsv, lower, upper)
+            
+            # Apply morphology to image
+            clean = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel1)
+            clean = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel2)
 
-            # Highlight any found objects in the image
-            for (x,y,w,h) in detected_objects:
-                img = cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0), 2)
+            # Get any external contours containg the color red
+            contours = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours = contours[0] if len(contours) == 2 else contours[1]
+
+            # Detect if detected red is a cube shape
+            detected_objects = []
+            for c in contours:
+                epsilon = 0.05  * cv2.arcLength(c, True)
+                if cv2.contourArea(c) > 100 and len(cv2.approxPolyDP(c, epsilon, True)) == 4:
+                    detected_objects.append(c)
+                    
+            # Write largest detected red object to image
+            if detected_objects:
+                closest_obj = None
+                for obj in detected_objects:
+                    if cv2.contourArea(obj) > cv2.contourArea(closest_obj) or closest_obj == None:
+                        closest_obj = obj
+                rot_rect = cv2.minAreaRect(closest_obj)
+                box = cv2.boxPoints(rot_rect)
+                box = numpy.int0(box)
+                cv2.drawContours(img,[box],0,(0,0,0),2)
+            
+            # Display edited image
+            cv2.imshow('frame', img)
+            cv2.waitKey(1)
+            rawCapture.truncate(0)
 
             # Create a status flag depending on distance from detected objects or walls
             status = path.wallDetected(detected_objects, img)

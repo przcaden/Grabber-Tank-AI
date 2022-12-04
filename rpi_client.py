@@ -171,7 +171,30 @@ def main_logic():
     
     for frame in cam.capture_continuous(rawCapture, 'jpeg'):
         img = frame.array
-        cv2.imshow('frame', img)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)    
+        imagem = (255-gray)
+        ret,thresh = cv2.threshold(imagem,120,200,1)
+        # apply morphology
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9,9))
+        clean = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15,15))
+        clean = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+
+        # get external contours
+        contours = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = contours[0] if len(contours) == 2 else contours[1]
+
+        result1 = img.copy()
+        result2 = img.copy()
+        for c in contours:
+            cv2.drawContours(result1,[c],0,(0,0,0),2)
+            # get rotated rectangle from contour
+            rot_rect = cv2.minAreaRect(c)
+            box = cv2.boxPoints(rot_rect)
+            box = np.int0(box)
+            # draw rotated rectangle on copy of img
+            cv2.drawContours(result2,[box],0,(0,0,0),2)
+            cv2.imshow('frame', img)
         rawCapture.truncate(0)
         # Send image data to client
         # img = stream_request(stream)

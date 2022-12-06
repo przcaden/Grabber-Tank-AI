@@ -15,26 +15,13 @@ import time
 
 Tr = 11
 Ec = 8
-line_pin_right = 19
-line_pin_middle = 16
-line_pin_left = 20
 
 # Initialize sensors' GPIO pins
 def sensor_setup():
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(line_pin_right,GPIO.IN)
-    GPIO.setup(line_pin_middle,GPIO.IN)
-    GPIO.setup(line_pin_left,GPIO.IN)
-    GPIO.setup(Tr, GPIO.OUT,initial=GPIO.LOW)
+    GPIO.setup(Tr, GPIO.OUT, initial=GPIO.LOW)
     GPIO.setup(Ec, GPIO.IN)
-
-# Get statuses of the tracking modules
-def tracking():
-    status_right = GPIO.input(line_pin_right)
-    status_middle = GPIO.input(line_pin_middle)
-    status_left = GPIO.input(line_pin_left)
-    return (status_right, status_middle, status_left)
 
 # Fetch ultrasonic sensor reading, prints distance in cm
 def ultra():

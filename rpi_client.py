@@ -22,8 +22,6 @@ from picamera import PiCamera
 from picamera.array import PiRGBArray
 
 # Set GPIO input/output modes
-move.setup()
-sense.sensor_setup()
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
@@ -47,7 +45,7 @@ init_pwm4 = scGear.initPos[4]
 
 # Initialize camera
 cam = PiCamera()
-cam.framerate = 32
+cam.framerate = 30
 cam.rotation = 0
 cam.hflip = False
 cam.vflip = True
@@ -89,25 +87,28 @@ class Path:
 
     # Detect if an object or wall is in view and decide what action to take
     def wallDetected(self, img, closest_object):
-        img_y, img_x = img.shape[:2] # image dimensions
-        dis = sense.ultra() # distance in cm
-
-        if dis < 3 and dis > 1:
-            if closest_object is not None:
-                x, y, w, h = cv2.boundingRect(closest_object)
-
-                # Object detected, change direction to approach object
-                if x > (img_x/2) + w:
-                    return 'redirect_left'
-                if x < (img_x/2) - w:
-                    return 'redirect_right'
+        img_y, img_x = img.shape[:2] # get image dimensions
+        dis = sense.ultra() # calculate distance in cm to nearest object
+        print(str(dis) + ' cm')
+        if closest_object is not None:
+            x, y, w, h = cv2.boundingRect(closest_object)
+            
+            # Obstruction in path, detect if an object is in view
+            if 6 < dis < 9:
                 # If object is centered, opt to grab it
-                elif x >= (img_x/2) - w and x <= (img_x/2) + w:
+                if x >= (img_x/2) - w and x <= (img_x/2) + w:
                     return 'grab'
-
-            # Wall detected
-            else:
-                return 'wall'
+                # Wall detected
+                else:
+                    return 'wall'
+                
+            # Object detected, change direction to approach object
+            print('img width: ' + str(img_x))
+            print('object width: ' + str(w))
+            if x > ((img_x/2) - w) * 0.9:
+                return 'redirect_left'
+            if x < ((img_x/2) + w) * 1.1:
+                return 'redirect_right'
 
         # If no object or wall detected, carry on
         return 'none'
@@ -115,6 +116,7 @@ class Path:
 
 # Grab the detected object in view
 def grab_sequence(img):
+    # distance of object is approx 7 cm
     grab = 0
     
 
@@ -124,8 +126,7 @@ def drop_sequence():
     hand_release = 0
     servoPosInit()
     
-    
-# Given a snapshot, detect any red cube-like objects
+# Computer vision function: Given a snapshot, detect any red cube-like objects
 def findObjects(img):
     # Get image's HSV color space
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -139,7 +140,6 @@ def findObjects(img):
 
     # Get any external contours containg the color red
     contours = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    print(len(contours))
     contours = contours[0] if len(contours) == 2 else contours[1]
 
     # Detect if detected red object is a cube shape, and grab only the closest object
@@ -165,8 +165,6 @@ def findObjects(img):
 ####################################### MAIN LOGIC METHOD #######################################
 
 def main_logic():
-    # Reset arm to neutral position
-    servoPosInit()
 
     # Declare algorithm variables
     path = Path()
@@ -181,7 +179,7 @@ def main_logic():
     test = True
     if test:
         for frame in cam.capture_continuous(rawCapture, resize=CAM_RES, format="bgr", use_video_port=True):
-            # Get a snapshot from RPi camera and 
+            # Get a snapshot from RPi camera and
             img = frame.array
             (img, closest_obj) = findObjects(img)
             status = path.wallDetected(img, closest_obj)
@@ -285,5 +283,7 @@ def main_logic():
 
 
 if __name__ == '__main__':
+    move.setup()
+    sense.sensor_setup()
+#     servoPosInit()
     main_logic()
-    print ('Hello juicy Wrld')

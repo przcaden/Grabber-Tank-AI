@@ -38,25 +38,24 @@ def tracking():
 
 # Fetch ultrasonic sensor reading, prints distance in cm
 def ultra():
-    for i in range(5):  # remove invalid test results
-        GPIO.output(Tr, GPIO.LOW)
-        time.sleep(0.000002)
-        GPIO.output(Tr, GPIO.HIGH)
-        time.sleep(0.000015)
-        GPIO.output(Tr, GPIO.LOW)
+    GPIO.output(Tr, GPIO.HIGH)
+    time.sleep(0.00001)
+    GPIO.output(Tr, GPIO.LOW)
+    
+    # Save start/stop times of pulses
+    while GPIO.input(Ec) == 0:
+        StartTime = time.time()
+    while GPIO.input(Ec) == 1:
+        StopTime = time.time()
         
-        while not GPIO.input(Ec):
-            pass
-        t1 = time.time()
-        while GPIO.input(Ec):
-            pass
-        t2 = time.time()
-        dist = (t2-t1)*340/2
+    # Find duration of pulse and calculate distance
+    dur = StopTime - StartTime
+    dis = (dur * 34300) / 2
+    return dis
 
-        # Check if past 5 iterations have valid data
-        if dist > 9 and i < 4:
-            continue
-        else:
-            return (t2-t1)*340/2
-
-
+# Loop for testing purposes
+if __name__ == "__main__":
+    sensor_setup()
+    while 1:
+        print('distance in cm: ' + str(ultra()))
+        time.sleep(1)

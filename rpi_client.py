@@ -15,20 +15,15 @@ import adeeptlib.RPIservo as RPIservo
 import sense
 import cv2
 import RPi.GPIO as GPIO
-import io
-import socket
-import struct
 from time import time
 from time import sleep
-import threading
 import numpy
 from picamera import PiCamera
-from PIL import Image
 from picamera.array import PiRGBArray
-import base64
 
 # Set GPIO input/output modes
 move.setup()
+sense.sensor_setup()
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
@@ -93,23 +88,21 @@ class Path:
         self.turns.append(t)
 
     # Detect if an object or wall is in view and decide what action to take
-    def wallDetected(closest_object, img):
+    def wallDetected(self, img, closest_object):
+        img_y, img_x = img.shape[:2] # image dimensions
         dis = sense.ultra() # distance in cm
 
         if dis < 3 and dis > 1:
-            move.motorStop() # stop moving
             if closest_object is not None:
-                x = closest_object.x
-                w = closest_object.w
+                x, y, w, h = cv2.boundingRect(closest_object)
 
                 # Object detected, change direction to approach object
-                if x > (img.x/2) + w:
+                if x > (img_x/2) + w:
                     return 'redirect_left'
-                if x < (img.x/2) - w:
+                if x < (img_x/2) - w:
                     return 'redirect_right'
-
                 # If object is centered, opt to grab it
-                elif x >= (img.x/2) - w and x <= (img.x/2) + w:
+                elif x >= (img_x/2) - w and x <= (img_x/2) + w:
                     return 'grab'
 
             # Wall detected
@@ -118,14 +111,19 @@ class Path:
 
         # If no object or wall detected, carry on
         return 'none'
+    
 
+# Grab the detected object in view
 def grab_sequence(img):
     grab = 0
+    
 
+# Drop the object held by the arm
 def drop_sequence():
     arm_lower = 0
     hand_release = 0
     servoPosInit()
+    
     
 # Given a snapshot, detect any red cube-like objects
 def findObjects(img):
@@ -141,13 +139,16 @@ def findObjects(img):
 
     # Get any external contours containg the color red
     contours = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    print(len(contours))
     contours = contours[0] if len(contours) == 2 else contours[1]
 
     # Detect if detected red object is a cube shape, and grab only the closest object
     closest_obj = None
     for c in contours:
-        epsilon = 0.01 * cv2.arcLength(c, True)
-        if (closest_obj is None or cv2.contourArea(c) > cv2.contourArea(closest_obj)) and len(cv2.approxPolyDP(c, epsilon, True)) == 4:
+        epsilon = 0.05 * cv2.arcLength(c, True)
+        if (closest_obj is None or cv2.contourArea(c) > cv2.contourArea(closest_obj)):
+            appr = cv2.approxPolyDP(c, epsilon, True)
+            if len(appr) == 4:
                 closest_obj = c
     
     # Write largest detected red object to image
@@ -158,6 +159,8 @@ def findObjects(img):
         cv2.drawContours(img,[box],0,(0,0,0),2)
         
     return img, closest_obj
+
+
 
 ####################################### MAIN LOGIC METHOD #######################################
 
@@ -180,8 +183,8 @@ def main_logic():
         for frame in cam.capture_continuous(rawCapture, resize=CAM_RES, format="bgr", use_video_port=True):
             # Get a snapshot from RPi camera and 
             img = frame.array
-            img, closest_obj = findObjects(img)
-            status = path.wallDetected(closest_obj, img)
+            (img, closest_obj) = findObjects(img)
+            status = path.wallDetected(img, closest_obj)
 
             print(status)
                 
@@ -276,18 +279,6 @@ def main_logic():
                 # Continue moving forward otherwise
                 else:
                     move(speed_set, 'forward', 'no', 0)
-
-            # Send image data to client
-            connection.write(img)
-
-            # Reset the stream for the next capture
-            stream.seek(0)
-            stream.truncate()
-
-        # Check if camera capture ended prematurely
-        if not goal_finish:
-            stream = io.BytesIO()
-        else: verify = True
 
     # Clean up GPIO and exit
     move.destroy()

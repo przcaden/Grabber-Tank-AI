@@ -90,27 +90,25 @@ class Path:
         img_y, img_x = img.shape[:2] # get image dimensions
         dis = sense.ultra() # calculate distance in cm to nearest object
         print(str(dis) + ' cm')
-        
-        # Obstruction in path, detect if an object is in view
-        if 6 < dis < 9:
-            if closest_object is not None:
-                x, y, w, h = cv2.boundingRect(closest_object)
-                print('img width: ' + str(img_x))
-                print('object width: ' + str(w))
+        if closest_object is not None:
+            x, y, w, h = cv2.boundingRect(closest_object)
             
+            # Obstruction in path, detect if an object is in view
+            if 6 < dis < 9:
                 # If object is centered, opt to grab it
                 if x >= (img_x/2) - w and x <= (img_x/2) + w:
                     return 'grab'
+                # Wall detected
+                else:
+                    return 'wall'
                 
-                # Object detected, change direction to approach object
-                if x > ((img_x/2) - w) * 0.9:
-                    return 'redirect_left'
-                if x < ((img_x/2) + w) * 1.1:
-                    return 'redirect_right'
-                
-            # Wall detected
-            else:
-                return 'wall'
+            # Object detected, change direction to approach object
+            print('img width: ' + str(img_x))
+            print('object width: ' + str(w))
+            if x > ((img_x/2) - w) * 0.9:
+                return 'redirect_left'
+            if x < ((img_x/2) + w) * 1.1:
+                return 'redirect_right'
 
         # If no object or wall detected, carry on
         return 'none'
@@ -170,13 +168,14 @@ def main_logic():
     # Declare algorithm variables
     path = Path()
     object_in_hand = False
-    turning = False
+    verify = False
     arrow = 0
     row = 0
     col = 0
-    speed_set = 10
+    speed_set = 30
     
     test = True
+    dfs_time = time()
     if test:
         for frame in cam.capture_continuous(rawCapture, resize=CAM_RES, format="bgr", use_video_port=True):
             # Get a snapshot from RPi camera and
@@ -185,30 +184,44 @@ def main_logic():
             status = path.wallDetected(img, closest_obj)
 
             print(status)
-            
-            if status == 'wall':
-                move.motorStop()
-                while status == 'wall':
-                    move.move(speed_set, 'no', 'right', 0.25)
-                    sleep(1)
+
+            if time() > dfs_time + 0.1:
+                if status == 'redirect_left':
+                    base_time = path.newTime(base_time)
+                    move.move(speed_set, 'no', 'left', 0.25)
+                    arrow = (arrow-1) % 4
+
+                elif status == 'redirect_right':
+                    base_time = path.newTime(base_time)
+                    move(speed_set, 'no', 'right', 0.25)
                     arrow = (arrow+1) % 4
-                    status = path.wallDetected(img, closest_obj)
-            else: move.move(speed_set, 'forward', 'no', 0)
+
+                elif status == 'wall':
+                    move.motorStop()
+                    while status == 'wall':
+                        move(speed_set, 'no', 'right', 0.25)
+                        arrow = (arrow+1) % 4
+                        status = path.wallDetected()
+
+                elif status == 'grab':
+                    move.motorStop()
+                    grab_sequence = 0
+                    base_time = path.times.pop()
+
+                else:
+                    move(speed_set, 'forward', 'no', 0)
                 
             # Display edited image
             cv2.imshow('Stream', img)
             cv2.waitKey(1)
             rawCapture.truncate(0)
 
-    # Main AI running block
-    base_time = time()
-    dfs_time = time()
-    turn_time = 0
-    # Run continuous stream of video from RPi camera
+    # Main AI running block: Runs a continuous stream of video from RPi camera
     for frame in cam.capture_continuous(rawCapture, CAM_RES, format="bgr"):
+        
         # Get a snapshot from RPi camera and detect if any objects are in view
         img = frame.array
-        (img, closest_object) = findObjects(img)
+        img, closest_object = findObjects(img)
             
         # Display edited image
         cv2.imshow('Stream', img)
@@ -217,34 +230,30 @@ def main_logic():
 
         # Create a status flag depending on distance from detected objects or walls
         status = path.wallDetected(closest_object, img)
-        print(status)
 
         # Generate string representation for node in path
         key = str(row) + ',' + str(col)
 
         # Perform decisionmaking based on the status flag if an object has not been picked up
-        if not object_in_hand and not turning:
+        if not object_in_hand:
             # Check if node has been traversed (DFS) and robot has traveled for 0.1 seconds
             if key not in path.visited and time() > dfs_time + 0.1:
-                dfs_time = time()
                 path.visited.add(key)
                 
-                # If object is in view to the left, redirect robot to it
                 if status == 'redirect_left':
                     base_time = path.newTime(base_time)
                     move.move(speed_set, 'no', 'left', 0.25)
                     arrow = (arrow-1) % 4
-                # If object is in view to the right, redirect robot to it
+
                 elif status == 'redirect_right':
                     base_time = path.newTime(base_time)
                     move(speed_set, 'no', 'right', 0.25)
                     arrow = (arrow+1) % 4
-                # If wall is found, keep redirecting until an open path is found
+
                 elif status == 'wall':
                     move.motorStop()
                     while status == 'wall':
                         move(speed_set, 'no', 'right', 0.25)
-                        sleep(1)
                         arrow = (arrow+1) % 4
                         status = path.wallDetected()
 
@@ -268,8 +277,8 @@ def main_logic():
             col += curDirection[1]
 
         # Perform decisionmaking for backtracking if the object has been picked up
-        elif object_in_hand:
-            if status == 'wall' or time.time()-base_time <= 0.1:
+        else:
+            if status == 'wall' or time.time() - base_time <= 0.1:
                 move.motorStop()
 
                 # If path has been fully backtracked (is empty) and time has elapsed, place the object back down
@@ -283,17 +292,13 @@ def main_logic():
                     base_time = path.times.pop()
 
                     # Reverse direction of the original path, since we are moving backwards
-                    if turn == 'L':                     
-                        move.move(speed_set, 'no', 'right', 0.25)
-                    else: move.move(speed_set, 'no', 'left', 0.25)
+                    if turn == 'L':
+                        move(speed_set, 'no', 'right', 0.25)
+                    else: move(speed_set, 'no', 'left', 0.25)
 
             # Continue moving forward otherwise
             else:
-                move.move(speed_set, 'forward', 'no', 0)
-                
-        # Complete a turn
-#         elif turning:
-            
+                move(speed_set, 'forward', 'no', 0)
 
     # Clean up GPIO and exit
     move.destroy()

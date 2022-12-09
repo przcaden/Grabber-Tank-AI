@@ -21,8 +21,8 @@ Motor_A_Pin2  = 15
 Motor_B_Pin1  = 27
 Motor_B_Pin2  = 18
 
-Dir_forward   = 0
-Dir_backward  = 1
+Dir_forward   = 1
+Dir_backward  = 0
 
 left_forward  = 0
 left_backward = 1

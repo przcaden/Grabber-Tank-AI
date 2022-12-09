@@ -196,7 +196,7 @@ def main_logic():
 
                 elif status == 'redirect_right':
                     # base_time = path.newTime(base_time)
-                    move(speed_set, 'no', 'right', 0.25)
+                    move.move(speed_set, 'no', 'right', 0.25)
                     arrow = (arrow+1) % 4
 
                 elif status == 'wall':
@@ -212,7 +212,7 @@ def main_logic():
                     base_time = path.times.pop()
 
                 else:
-                    move(speed_set, 'forward', 'no', 0)
+                    move.move(speed_set, 'forward', 'no', 0)
                 
             # Display edited image
             cv2.imshow('Stream', img)

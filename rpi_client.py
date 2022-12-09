@@ -173,9 +173,12 @@ def main_logic():
     row = 0
     col = 0
     speed_set = 30
+
+    # Time tracking
+    base_time = time()
+    dfs_time = time()
     
     test = True
-    dfs_time = time()
     if test:
         for frame in cam.capture_continuous(rawCapture, resize=CAM_RES, format="bgr", use_video_port=True):
             # Get a snapshot from RPi camera and
@@ -187,12 +190,12 @@ def main_logic():
 
             if time() > dfs_time + 0.1:
                 if status == 'redirect_left':
-                    base_time = path.newTime(base_time)
+                    # base_time = path.newTime(base_time)
                     move.move(speed_set, 'no', 'left', 0.25)
                     arrow = (arrow-1) % 4
 
                 elif status == 'redirect_right':
-                    base_time = path.newTime(base_time)
+                    # base_time = path.newTime(base_time)
                     move(speed_set, 'no', 'right', 0.25)
                     arrow = (arrow+1) % 4
 
@@ -218,7 +221,7 @@ def main_logic():
 
     # Main AI running block: Runs a continuous stream of video from RPi camera
     for frame in cam.capture_continuous(rawCapture, CAM_RES, format="bgr"):
-        
+
         # Get a snapshot from RPi camera and detect if any objects are in view
         img = frame.array
         img, closest_object = findObjects(img)

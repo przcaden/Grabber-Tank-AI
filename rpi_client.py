@@ -118,49 +118,65 @@ class Path:
 
 # Grab the detected object in view
 def grab_sequence(img):
-    H_sc.singleServo(15, -1, 5) # open claw
-    time.sleep(0.5)
-    H_sc.stopWiggle()
-    time.sleep(1)
-    
-    # BASE CODE #######
+    # GRAB SEQUENCE
+    # open claw and move base
+    H_sc.singleServo(15, -1, 5)
     H_sc.singleServo(12, -1, 3)
-    time.sleep(0.5)
+    sleep(0.5)
     H_sc.stopWiggle()
-    time.sleep(0.3)
+    sleep(0.2)
     
-    # MIDDLE CODE #####
+    # move middle
     H_sc.singleServo(13, -1, 3)
-    time.sleep(0.8)
+    sleep(0.8)
     H_sc.stopWiggle()
-    time.sleep(0.3)
+    sleep(0.2)
     
-    H_sc.singleServo(12, -1, 3) # base
-    time.sleep(0.6)
+    # move base
+    H_sc.singleServo(12, -1, 3)
+    sleep(0.6)
     H_sc.stopWiggle()
-    time.sleep(0.3)
+    sleep(0.2)
 
     # close claw
     H_sc.singleServo(15, 1, 5)
-    time.sleep(0.5)
+    sleep(0.5)
     H_sc.stopWiggle()
-    time.sleep(1)
+    sleep(0.8)
 
     # move base back up
     H_sc.singleServo(12, 1, 2)
-    time.sleep(1.7)
+    sleep(1.7)
     H_sc.stopWiggle()
     # move middle back down
     H_sc.singleServo(13, 1, 2)
-    time.sleep(1)
+    sleep(1)
     H_sc.stopWiggle()
-    time.sleep(0.3)
 
 # Drop the object held by the arm
 def drop_sequence():
-    arm_lower = 0
-    hand_release = 0
-    servoPosInit()
+    # move base
+        H_sc.singleServo(12, -1, 3)
+        time.sleep(0.5)
+        H_sc.stopWiggle()
+        time.sleep(0.3)
+        
+        # move middle
+        H_sc.singleServo(13, -1, 3)
+        time.sleep(0.8)
+        H_sc.stopWiggle()
+        time.sleep(0.3)
+        
+		# move base
+        H_sc.singleServo(12, -1, 3)
+        time.sleep(0.6)
+        H_sc.stopWiggle()
+        time.sleep(0.3)
+
+		# open claw
+        H_sc.singleServo(15, -1, 5)
+        time.sleep(0.5)
+        H_sc.stopWiggle()
     
 # Computer vision function: Given a snapshot, detect any red cube-like objects
 def findObjects(img):

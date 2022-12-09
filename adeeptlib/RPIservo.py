@@ -312,20 +312,12 @@ if __name__ == '__main__':
     time.sleep(2)
     
     while 1:
-#       sc.moveAngle(0,(random.random()*100-50))
-#       time.sleep(1)
-#       sc.moveAngle(1,(random.random()*100-50))
-#       time.sleep(1)
         
-        # 15 = claw, 14 = hand, 13 = middle, 12 = base
+        # PINS: 15 = claw, 14 = hand, 13 = middle, 12 = base
         
 		# GRAB SEQUENCE
-        H_sc.singleServo(15, -1, 5) # open claw
-        time.sleep(0.5)
-        H_sc.stopWiggle()
-        time.sleep(0.3)
-        
-        # move base
+        # open claw and move base
+        H_sc.singleServo(15, -1, 5)
         H_sc.singleServo(12, -1, 3)
         time.sleep(0.5)
         H_sc.stopWiggle()

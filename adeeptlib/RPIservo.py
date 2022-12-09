@@ -323,31 +323,31 @@ if __name__ == '__main__':
         H_sc.singleServo(15, -1, 5) # open claw
         time.sleep(0.5)
         H_sc.stopWiggle()
-        time.sleep(1)
+        time.sleep(0.3)
         
         # move base
         H_sc.singleServo(12, -1, 3)
         time.sleep(0.5)
         H_sc.stopWiggle()
-        time.sleep(0.3)
+        time.sleep(0.2)
         
         # move middle
         H_sc.singleServo(13, -1, 3)
         time.sleep(0.8)
         H_sc.stopWiggle()
-        time.sleep(0.3)
+        time.sleep(0.2)
         
 		# move base
         H_sc.singleServo(12, -1, 3)
         time.sleep(0.6)
         H_sc.stopWiggle()
-        time.sleep(0.3)
+        time.sleep(0.2)
 
 		# close claw
         H_sc.singleServo(15, 1, 5)
         time.sleep(0.5)
         H_sc.stopWiggle()
-        time.sleep(1)
+        time.sleep(0.8)
 
 		# move base back up
         H_sc.singleServo(12, 1, 2)
@@ -357,10 +357,8 @@ if __name__ == '__main__':
         H_sc.singleServo(13, 1, 2)
         time.sleep(1)
         H_sc.stopWiggle()
-        time.sleep(0.3)
         
-
-        time.sleep(5)
+        time.sleep(3)
 
 		# DROP SEQUENCE
 		# move base
@@ -385,42 +383,8 @@ if __name__ == '__main__':
         H_sc.singleServo(15, -1, 5)
         time.sleep(0.5)
         H_sc.stopWiggle()
-        time.sleep(1)
 
-        scGear.initConfig(0,init_pwm0,1)
-        P_sc.initConfig(1,init_pwm1,1)
-        T_sc.initConfig(2,init_pwm2,1)
-        H_sc.initConfig(3,init_pwm3,1)
-        G_sc.initConfig(4,init_pwm4,1)
-        
-        # CLAW CODE #####
-#         H_sc.singleServo(15, -1, 5)
-#         time.sleep(0.5)
-#         H_sc.stopWiggle()
-#         time.sleep(1)
-#         H_sc.singleServo(15, 1, 5)
-#         time.sleep(0.5)
-#         H_sc.stopWiggle()
-#         time.sleep(1)
+        time.sleep(10)
 		
-        '''
-		delaytime = 5
-		sc.certSpeed([0,7], [60,0], [40,60])
-		print('xx1xx')
-		time.sleep(delaytime)
-
-		sc.certSpeed([0,7], [0,60], [40,60])
-		print('xx2xx')
-		time.sleep(delaytime+2)
-
-		# sc.moveServoInit([0])
-		# time.sleep(delaytime)
-        '''
-        '''
-		pwm.set_pwm(0,0,560)
-		time.sleep(1)
-		pwm.set_pwm(0,0,100)
-		time.sleep(2)
-        '''
         pass
     pass

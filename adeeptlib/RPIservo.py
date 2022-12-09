@@ -317,7 +317,7 @@ if __name__ == '__main__':
         
 		# GRAB SEQUENCE
         # open claw and move base
-        H_sc.singleServo(15, -1, 5)
+        T_sc.singleServo(15, -1, 5)
         H_sc.singleServo(12, -1, 3)
         time.sleep(0.5)
         H_sc.stopWiggle()

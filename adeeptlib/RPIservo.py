@@ -348,8 +348,11 @@ if __name__ == '__main__':
         time.sleep(1)
 
 		# move base back up
-        H_sc.singleServo(12, 1, 3)
-        time.sleep(0.5)
+        H_sc.singleServo(12, 1, 1)
+        time.sleep(1.5)
+        H_sc.stopWiggle()
+        H_sc.singleServo(13, 1, 1)
+        time.sleep(1.5)
         H_sc.stopWiggle()
         time.sleep(0.3)
         

@@ -285,20 +285,80 @@ class ServoCtrl(threading.Thread):
 
 
 if __name__ == '__main__':
-	sc = ServoCtrl()
-	sc.start()
-	while 1:
-		sc.moveAngle(0,(random.random()*100-50))
-		time.sleep(1)
-		sc.moveAngle(1,(random.random()*100-50))
-		time.sleep(1)
-		'''
-		sc.singleServo(0, 1, 5)
-		time.sleep(6)
-		sc.singleServo(0, -1, 30)
-		time.sleep(1)
-		'''
-		'''
+    scGear = ServoCtrl()
+    scGear.moveInit()
+    P_sc = ServoCtrl()
+    P_sc.start()
+    T_sc = ServoCtrl()
+    T_sc.start()
+    H_sc = ServoCtrl()
+    H_sc.start()
+    G_sc = ServoCtrl()
+    G_sc.start()
+
+    init_pwm0 = scGear.initPos[0]
+    init_pwm1 = scGear.initPos[1]
+    init_pwm2 = scGear.initPos[2]
+    init_pwm3 = scGear.initPos[3]
+    init_pwm4 = scGear.initPos[4]
+    
+    scGear.initConfig(0,init_pwm0,1)
+    P_sc.initConfig(1,init_pwm1,1)
+    T_sc.initConfig(2,init_pwm2,1)
+    H_sc.initConfig(3,init_pwm3,1)
+    G_sc.initConfig(4,init_pwm4,1)
+    
+    print('begin')
+    time.sleep(2)
+    
+    while 1:
+#       sc.moveAngle(0,(random.random()*100-50))
+#       time.sleep(1)
+#       sc.moveAngle(1,(random.random()*100-50))
+#       time.sleep(1)
+        
+        # 15 = claw, 14 = hand, 13 = middle, 12 = base
+        
+        H_sc.singleServo(15, -1, 5) # open claw
+        time.sleep(0.5)
+        H_sc.stopWiggle()
+        time.sleep(1)
+        
+        # BASE CODE #######
+        H_sc.singleServo(12, -1, 3)
+        time.sleep(0.5)
+        H_sc.stopWiggle()
+        time.sleep(0.5)
+        
+        # MIDDLE CODE #####
+        H_sc.singleServo(13, -1, 3)
+        time.sleep(0.8)
+        H_sc.stopWiggle()
+        time.sleep(0.5)
+        
+        H_sc.singleServo(12, -1, 3) # base
+        time.sleep(0.4)
+        H_sc.stopWiggle()
+        time.sleep(0.5)
+        
+#         H_sc.singleServo(13, 1, 2) # middle
+#         time.sleep(0.3)
+#         H_sc.stopWiggle()
+#         time.sleep(1)
+        
+        time.sleep(10)
+        
+        # CLAW CODE #####
+#         H_sc.singleServo(15, -1, 5)
+#         time.sleep(0.5)
+#         H_sc.stopWiggle()
+#         time.sleep(1)
+#         H_sc.singleServo(15, 1, 5)
+#         time.sleep(0.5)
+#         H_sc.stopWiggle()
+#         time.sleep(1)
+		
+        '''
 		delaytime = 5
 		sc.certSpeed([0,7], [60,0], [40,60])
 		print('xx1xx')
@@ -310,12 +370,12 @@ if __name__ == '__main__':
 
 		# sc.moveServoInit([0])
 		# time.sleep(delaytime)
-		'''
-		'''
+        '''
+        '''
 		pwm.set_pwm(0,0,560)
 		time.sleep(1)
 		pwm.set_pwm(0,0,100)
 		time.sleep(2)
-		'''
-		pass
-	pass
+        '''
+        pass
+    pass

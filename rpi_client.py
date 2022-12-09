@@ -28,6 +28,8 @@ GPIO.setwarnings(False)
 # Define servo variables
 scGear = RPIservo.ServoCtrl()
 scGear.moveInit()
+
+# Declare various servo PWM settings
 P_sc = RPIservo.ServoCtrl()
 P_sc.start()
 T_sc = RPIservo.ServoCtrl()
@@ -172,7 +174,7 @@ def main_logic():
     arrow = 0
     row = 0
     col = 0
-    speed_set = 30
+    speed_set = 40
 
     # Time tracking
     base_time = time()
@@ -193,32 +195,10 @@ def main_logic():
             status = path.wallDetected(img, closest_obj)
 
             print(status)
-
-            if time() > dfs_time + 0.1:
-                if status == 'redirect_left':
-                    # base_time = path.newTime(base_time)
-                    move.move(speed_set, 'no', 'left', 0.25)
-                    arrow = (arrow-1) % 4
-
-                elif status == 'redirect_right':
-                    # base_time = path.newTime(base_time)
-                    move.move(speed_set, 'no', 'right', 0.25)
-                    arrow = (arrow+1) % 4
-
-                elif status == 'wall':
-                    move.motorStop()
-                    while status == 'wall':
-                        move(speed_set, 'no', 'right', 0.25)
-                        arrow = (arrow+1) % 4
-                        status = path.wallDetected()
-
-                elif status == 'grab':
-                    move.motorStop()
-                    grab_sequence = 0
-                    base_time = path.times.pop()
-
-                else:
-                    move.move(speed_set, 'forward', 'no', 0)
+            
+            if status == 'grab':
+                #P_sc, T_sc, H_sc, G_sc
+                P_sc.moveAngle(0, 50)
 
     # Main AI running block: Runs a continuous stream of video from RPi camera
     for frame in cam.capture_continuous(rawCapture, CAM_RES, format="bgr"):
@@ -251,13 +231,13 @@ def main_logic():
 
                 elif status == 'redirect_right':
                     base_time = path.newTime(base_time)
-                    move(speed_set, 'no', 'right', 0.25)
+                    move.move(speed_set, 'no', 'right', 0.25)
                     arrow = (arrow+1) % 4
 
                 elif status == 'wall':
                     move.motorStop()
                     while status == 'wall':
-                        move(speed_set, 'no', 'right', 0.25)
+                        move.move(speed_set, 'no', 'right', 0.25)
                         arrow = (arrow+1) % 4
                         status = path.wallDetected()
 
@@ -267,7 +247,7 @@ def main_logic():
                     base_time = path.times.pop()
 
                 else:
-                    move(speed_set, 'forward', 'no', 0)
+                    move.move(speed_set, 'forward', 'no', 0)
 
             # If area has been travelled, turn right
             elif key in path.visited:

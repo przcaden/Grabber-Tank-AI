@@ -319,24 +319,26 @@ if __name__ == '__main__':
         
         # 15 = claw, 14 = hand, 13 = middle, 12 = base
         
+		# GRAB SEQUENCE
         H_sc.singleServo(15, -1, 5) # open claw
         time.sleep(0.5)
         H_sc.stopWiggle()
         time.sleep(1)
         
-        # BASE CODE #######
+        # move base
         H_sc.singleServo(12, -1, 3)
         time.sleep(0.5)
         H_sc.stopWiggle()
         time.sleep(0.3)
         
-        # MIDDLE CODE #####
+        # move middle
         H_sc.singleServo(13, -1, 3)
         time.sleep(0.8)
         H_sc.stopWiggle()
         time.sleep(0.3)
         
-        H_sc.singleServo(12, -1, 3) # base
+		# move base
+        H_sc.singleServo(12, -1, 3)
         time.sleep(0.6)
         H_sc.stopWiggle()
         time.sleep(0.3)
@@ -357,7 +359,39 @@ if __name__ == '__main__':
         H_sc.stopWiggle()
         time.sleep(0.3)
         
-        time.sleep(10)
+
+        time.sleep(5)
+
+		# DROP SEQUENCE
+		# move base
+        H_sc.singleServo(12, -1, 3)
+        time.sleep(0.5)
+        H_sc.stopWiggle()
+        time.sleep(0.3)
+        
+        # move middle
+        H_sc.singleServo(13, -1, 3)
+        time.sleep(0.8)
+        H_sc.stopWiggle()
+        time.sleep(0.3)
+        
+		# move base
+        H_sc.singleServo(12, -1, 3)
+        time.sleep(0.6)
+        H_sc.stopWiggle()
+        time.sleep(0.3)
+
+		# open claw
+        H_sc.singleServo(15, -1, 5)
+        time.sleep(0.5)
+        H_sc.stopWiggle()
+        time.sleep(1)
+
+        scGear.initConfig(0,init_pwm0,1)
+        P_sc.initConfig(1,init_pwm1,1)
+        T_sc.initConfig(2,init_pwm2,1)
+        H_sc.initConfig(3,init_pwm3,1)
+        G_sc.initConfig(4,init_pwm4,1)
         
         # CLAW CODE #####
 #         H_sc.singleServo(15, -1, 5)

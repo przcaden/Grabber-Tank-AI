@@ -118,8 +118,43 @@ class Path:
 
 # Grab the detected object in view
 def grab_sequence(img):
-    # distance of object is approx 7 cm
-    grab = 0
+    H_sc.singleServo(15, -1, 5) # open claw
+    time.sleep(0.5)
+    H_sc.stopWiggle()
+    time.sleep(1)
+    
+    # BASE CODE #######
+    H_sc.singleServo(12, -1, 3)
+    time.sleep(0.5)
+    H_sc.stopWiggle()
+    time.sleep(0.3)
+    
+    # MIDDLE CODE #####
+    H_sc.singleServo(13, -1, 3)
+    time.sleep(0.8)
+    H_sc.stopWiggle()
+    time.sleep(0.3)
+    
+    H_sc.singleServo(12, -1, 3) # base
+    time.sleep(0.6)
+    H_sc.stopWiggle()
+    time.sleep(0.3)
+
+    # close claw
+    H_sc.singleServo(15, 1, 5)
+    time.sleep(0.5)
+    H_sc.stopWiggle()
+    time.sleep(1)
+
+    # move base back up
+    H_sc.singleServo(12, 1, 2)
+    time.sleep(1.7)
+    H_sc.stopWiggle()
+    # move middle back down
+    H_sc.singleServo(13, 1, 2)
+    time.sleep(1)
+    H_sc.stopWiggle()
+    time.sleep(0.3)
 
 # Drop the object held by the arm
 def drop_sequence():

@@ -337,7 +337,7 @@ if __name__ == '__main__':
         time.sleep(0.5)
         
         H_sc.singleServo(12, -1, 3) # base
-        time.sleep(0.4)
+        time.sleep(0.7)
         H_sc.stopWiggle()
         time.sleep(0.5)
         

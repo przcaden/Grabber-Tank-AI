@@ -184,6 +184,12 @@ def main_logic():
             # Get a snapshot from RPi camera and
             img = frame.array
             (img, closest_obj) = findObjects(img)
+
+            # Display edited image
+            cv2.imshow('Stream', img)
+            cv2.waitKey(1)
+            rawCapture.truncate(0)
+
             status = path.wallDetected(img, closest_obj)
 
             print(status)
@@ -213,11 +219,6 @@ def main_logic():
 
                 else:
                     move.move(speed_set, 'forward', 'no', 0)
-                
-            # Display edited image
-            cv2.imshow('Stream', img)
-            cv2.waitKey(1)
-            rawCapture.truncate(0)
 
     # Main AI running block: Runs a continuous stream of video from RPi camera
     for frame in cam.capture_continuous(rawCapture, CAM_RES, format="bgr"):

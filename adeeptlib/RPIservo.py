@@ -316,12 +316,15 @@ if __name__ == '__main__':
         # PINS: 15 = claw, 14 = hand, 13 = middle, 12 = base
         
 		# GRAB SEQUENCE
-        # open claw and move base
-        T_sc.singleServo(15, -1, 5)
+        H_sc.singleServo(15, -1, 5) # open claw
+        time.sleep(0.5)
+        H_sc.stopWiggle()
+        time.sleep(0.3)
+        
+        # move base
         H_sc.singleServo(12, -1, 3)
         time.sleep(0.5)
         H_sc.stopWiggle()
-        T_sc.stopWiggle()
         time.sleep(0.2)
         
         # move middle

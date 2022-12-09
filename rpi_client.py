@@ -197,8 +197,7 @@ def main_logic():
             print(status)
             
             if status == 'grab':
-                #P_sc, T_sc, H_sc, G_sc
-                P_sc.moveAngle(0, 50)
+                print('grabbing grabbing!!')
 
     # Main AI running block: Runs a continuous stream of video from RPi camera
     for frame in cam.capture_continuous(rawCapture, CAM_RES, format="bgr"):

@@ -328,23 +328,30 @@ if __name__ == '__main__':
         H_sc.singleServo(12, -1, 3)
         time.sleep(0.5)
         H_sc.stopWiggle()
-        time.sleep(0.5)
+        time.sleep(0.3)
         
         # MIDDLE CODE #####
         H_sc.singleServo(13, -1, 3)
         time.sleep(0.8)
         H_sc.stopWiggle()
-        time.sleep(0.5)
+        time.sleep(0.3)
         
         H_sc.singleServo(12, -1, 3) # base
-        time.sleep(0.7)
+        time.sleep(0.6)
         H_sc.stopWiggle()
+        time.sleep(0.3)
+
+		# close claw
+        H_sc.singleServo(15, 1, 5)
         time.sleep(0.5)
-        
-#         H_sc.singleServo(13, 1, 2) # middle
-#         time.sleep(0.3)
-#         H_sc.stopWiggle()
-#         time.sleep(1)
+        H_sc.stopWiggle()
+        time.sleep(1)
+
+		# move base back up
+        H_sc.singleServo(12, 1, 3)
+        time.sleep(0.5)
+        H_sc.stopWiggle()
+        time.sleep(0.3)
         
         time.sleep(10)
         

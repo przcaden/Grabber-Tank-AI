@@ -159,7 +159,6 @@ def grab_sequence():
 
 # Drop the object held by the arm
 def drop_sequence():
-    sleep(2)
     # move base
     H_sc.singleServo(12, -1, 3)
     sleep(0.5)
@@ -178,7 +177,7 @@ def drop_sequence():
     H_sc.stopWiggle()
     sleep(0.3)
 
-    # open claw
+    # open claw (drop object)
     H_sc.singleServo(15, -1, 5)
     sleep(0.5)
     H_sc.stopWiggle()
@@ -254,9 +253,12 @@ def main_logic():
             print(status)
             
             if status == 'grab':
+                move.motorStop()
                 print('grabbing grabbing!!')
                 grab_sequence()
                 drop_sequence()
+            else:
+                move.move(speed_set, 'forward', 'no', 0)
 
     # Main AI running block: Runs a continuous stream of video from RPi camera
     for frame in cam.capture_continuous(rawCapture, CAM_RES, format="bgr"):
@@ -324,8 +326,9 @@ def main_logic():
 
                 # If path has been fully backtracked (is empty) and time has elapsed, place the object back down
                 if not path.turns:
+                    sleep(2)
                     drop_sequence()
-                    goal_finish = True
+                    break
 
                 # Otherwise, proceed in backtracking path
                 else:
@@ -342,6 +345,7 @@ def main_logic():
                 move(speed_set, 'forward', 'no', 0)
 
     # Clean up GPIO and exit
+    print('Finished object retrieval')
     move.destroy()
 
 

@@ -117,10 +117,14 @@ class Path:
     
 
 # Grab the detected object in view
-def grab_sequence(img):
-    # GRAB SEQUENCE
+def grab_sequence():
     # open claw and move base
-    H_sc.singleServo(15, -1, 5)
+    H_sc.singleServo(15, -1, 5) # open claw
+    sleep(0.5)
+    H_sc.stopWiggle()
+    sleep(0.3)
+    
+    # move base
     H_sc.singleServo(12, -1, 3)
     sleep(0.5)
     H_sc.stopWiggle()
@@ -249,6 +253,8 @@ def main_logic():
             
             if status == 'grab':
                 print('grabbing grabbing!!')
+                grab_sequence()
+                drop_sequence()
 
     # Main AI running block: Runs a continuous stream of video from RPi camera
     for frame in cam.capture_continuous(rawCapture, CAM_RES, format="bgr"):

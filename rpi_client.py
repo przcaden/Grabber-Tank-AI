@@ -225,7 +225,6 @@ def main_logic():
     # Declare algorithm variables
     path = Path()
     object_in_hand = False
-    verify = False
     arrow = 0
     row = 0
     col = 0
@@ -347,5 +346,4 @@ def main_logic():
 if __name__ == '__main__':
     move.setup()
     sense.sensor_setup()
-#     servoPosInit()
     main_logic()

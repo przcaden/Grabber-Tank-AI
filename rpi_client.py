@@ -107,9 +107,9 @@ class Path:
             # Object detected, change direction to approach object
             print('img width: ' + str(img_x))
             print('object width: ' + str(w))
-            if x > ((img_x/2) - w) * 0.9:
+            if x > (img_x/2) - w:
                 return 'redirect_left'
-            if x < ((img_x/2) + w) * 1.1:
+            if x < (img_x/2) + w:
                 return 'redirect_right'
 
         # If no object or wall detected, carry on
@@ -323,7 +323,7 @@ def main_logic():
 
                 # If path has been fully backtracked (is empty) and time has elapsed, place the object back down
                 if not path.turns:
-                    drop_sequence = 0
+                    drop_sequence()
                     goal_finish = True
 
                 # Otherwise, proceed in backtracking path

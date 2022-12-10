@@ -241,10 +241,12 @@ def main_logic():
             img = frame.array
             (img, closest_obj) = findObjects(img)
 
-            # Display edited image
+            # Display edited image (disable if no display is being used)
             # cv2.imshow('Stream', img)
+
+            # Prepare next image to be fetched from the camera
             cv2.waitKey(1)
-            # rawCapture.truncate(0)
+            rawCapture.truncate(0)
 
             status = path.wallDetected(img, closest_obj)
 

@@ -159,28 +159,29 @@ def grab_sequence():
 
 # Drop the object held by the arm
 def drop_sequence():
+    sleep(2)
     # move base
-        H_sc.singleServo(12, -1, 3)
-        time.sleep(0.5)
-        H_sc.stopWiggle()
-        time.sleep(0.3)
-        
-        # move middle
-        H_sc.singleServo(13, -1, 3)
-        time.sleep(0.8)
-        H_sc.stopWiggle()
-        time.sleep(0.3)
-        
-		# move base
-        H_sc.singleServo(12, -1, 3)
-        time.sleep(0.6)
-        H_sc.stopWiggle()
-        time.sleep(0.3)
+    H_sc.singleServo(12, -1, 3)
+    sleep(0.5)
+    H_sc.stopWiggle()
+    sleep(0.3)
+    
+    # move middle
+    H_sc.singleServo(13, -1, 3)
+    sleep(0.8)
+    H_sc.stopWiggle()
+    sleep(0.3)
+    
+    # move base
+    H_sc.singleServo(12, -1, 3)
+    sleep(0.6)
+    H_sc.stopWiggle()
+    sleep(0.3)
 
-		# open claw
-        H_sc.singleServo(15, -1, 5)
-        time.sleep(0.5)
-        H_sc.stopWiggle()
+    # open claw
+    H_sc.singleServo(15, -1, 5)
+    sleep(0.5)
+    H_sc.stopWiggle()
     
 # Computer vision function: Given a snapshot, detect any red cube-like objects
 def findObjects(img):

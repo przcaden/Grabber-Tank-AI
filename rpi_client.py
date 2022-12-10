@@ -242,9 +242,9 @@ def main_logic():
             (img, closest_obj) = findObjects(img)
 
             # Display edited image
-            cv2.imshow('Stream', img)
+            # cv2.imshow('Stream', img)
             cv2.waitKey(1)
-            rawCapture.truncate(0)
+            # rawCapture.truncate(0)
 
             status = path.wallDetected(img, closest_obj)
 

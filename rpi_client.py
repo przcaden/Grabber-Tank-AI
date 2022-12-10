@@ -98,7 +98,7 @@ class Path:
             # Obstruction in path, detect if an object is in view
             if 6 < dis < 9:
                 # If object is centered, opt to grab it
-                if x >= (img_x/2) - w and x <= (img_x/2) + w:
+                if x >= ((img_x/2) - w) * 0.9 and x <= ((img_x/2) + w)* 1.1:
                     return 'grab'
                 # Wall detected
                 else:

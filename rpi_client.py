@@ -300,7 +300,6 @@ def main_logic():
 
                 elif status == 'grab':
                     move.motorStop()
-                    grab_sequence = 0
                     base_time = path.times.pop()
 
                 else:

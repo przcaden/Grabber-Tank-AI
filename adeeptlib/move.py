@@ -143,9 +143,10 @@ if __name__ == '__main__':
 	try:
 		speed_set = 60
 		setup()
-		move(speed_set, 'forward', 'no', 0.8)
-		time.sleep(1.3)
-		motorStop()
+		while 1:
+			move(speed_set, 'forward', 'no', 0.8)
+			time.sleep(1.3)
+			motorStop()
 		destroy()
 	except KeyboardInterrupt:
 		destroy()

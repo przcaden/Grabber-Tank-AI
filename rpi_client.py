@@ -87,6 +87,24 @@ class Path:
     def newTurn(self, t):
         self.turns.append(t)
 
+    # Determine if coordinates have been visited already. Uses a sensitivity range of 5.
+    def alreadyVisited(self, row, col, arrow):
+        # Run check if robot is facing left or right
+        if arrow == 0 or arrow == 2:
+            for i in range(5):
+                testkey1 = str(row) + ',' + str(col+i)
+                testkey2 = str(row) + ',' + str(col-i)
+                if testkey1 in self.visited or testkey2 in self.visited:
+                    return True
+        # Run check if robot is facing up or down
+        elif arrow == 1 or arrow == 3:
+            for i in range(5):
+                testkey1 = str(row+i) + ',' + str(col)
+                testkey2 = str(row-i) + ',' + str(col)
+                if testkey1 in self.visited or testkey2 in self.visited:
+                    return True
+        return False
+
     # Detect if an object or wall is in view and decide what action to take
     def wallDetected(self, img, closest_object):
         img_y, img_x = img.shape[:2] # get image dimensions
@@ -225,10 +243,10 @@ def main_logic():
     # Declare algorithm variables
     path = Path()
     object_in_hand = False
-    arrow = 0
+    arrow = 0 # indicates direction faced (0 = left, 1 = up, 2 = right, 4 = down)
     row = 0
     col = 0
-    speed_set = 40
+    speed_set = 50
 
     # Time tracking
     base_time = time()
@@ -254,8 +272,8 @@ def main_logic():
             
             if status == 'grab':
                 move.motorStop()
-                print('grabbing grabbing!!')
                 grab_sequence()
+                sleep(2)
                 drop_sequence()
             else:
                 move.move(speed_set, 'forward', 'no', 0)
@@ -265,23 +283,26 @@ def main_logic():
 
         # Get a snapshot from RPi camera and detect if any objects are in view
         img = frame.array
-        img, closest_object = findObjects(img)
-            
-        # Display edited image
-        cv2.imshow('Stream', img)
+        (img, closest_object) = findObjects(img)
+
+        # Display edited image (disable if no display is being used)
+        # cv2.imshow('Stream', img)
+
+        # Prepare next image to be fetched from the camera
         cv2.waitKey(1)
         rawCapture.truncate(0)
 
-        # Create a status flag depending on distance from detected objects or walls
+        # Create a status flag, depending on distance from detected objects or walls
         status = path.wallDetected(closest_object, img)
 
         # Generate string representation for node in path
         key = str(row) + ',' + str(col)
 
-        # Perform decisionmaking based on the status flag if an object has not been picked up
+        # Perform decisionmaking if an object has not been picked up
         if not object_in_hand:
+
             # Check if node has been traversed (DFS) and robot has traveled for 0.1 seconds
-            if key not in path.visited and time() > dfs_time + 0.1:
+            if not path.alreadyVisited(row, col) and time() > dfs_time + 0.1:
                 path.visited.add(key)
                 
                 if status == 'redirect_left':
@@ -298,20 +319,29 @@ def main_logic():
                     move.motorStop()
                     while status == 'wall':
                         move.move(speed_set, 'no', 'right', 0.25)
+                        sleep(2)
+                        move.motorStop()
                         arrow = (arrow+1) % 4
                         status = path.wallDetected()
 
                 elif status == 'grab':
                     move.motorStop()
                     base_time = path.times.pop()
+                    # Turn 180 degrees
+                    move.move(speed_set, 'no', 'right', 0.25)
+                    sleep(4)
+                    move.motorStop()
+                    object_in_hand = True
 
                 else:
                     move.move(speed_set, 'forward', 'no', 0)
 
             # If area has been travelled, turn right
-            elif key in path.visited:
+            elif path.alreadyVisited(row, col):
                 move.motorStop()
                 move(speed_set, 'no', 'right', 0.25)
+                sleep(2)
+                move.motorStop()
                 arrow = (arrow+1) % 4
 
             # Update tracked direction faced by robot
@@ -321,14 +351,13 @@ def main_logic():
 
         # Perform decisionmaking for backtracking if the object has been picked up
         else:
-            if status == 'wall' or time.time() - base_time <= 0.1:
-                move.motorStop()
+            if not path.turns:
+                sleep(2)
+                drop_sequence()
+                break
 
-                # If path has been fully backtracked (is empty) and time has elapsed, place the object back down
-                if not path.turns:
-                    sleep(2)
-                    drop_sequence()
-                    break
+            if status == 'wall' or time()-base_time <= 0.1:
+                move.motorStop()
 
                 # Otherwise, proceed in backtracking path
                 else:

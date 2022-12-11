@@ -255,7 +255,7 @@ def main_logic():
     base_time = time()
     dfs_time = time()
 
-    img = cam.capture()
+    img = cam.capture('/home/pi/Pictures/ss.png')
     img = img.array
     findObjects(img)
 

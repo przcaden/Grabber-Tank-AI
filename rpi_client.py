@@ -51,7 +51,8 @@ cam.framerate = 30
 cam.rotation = 0
 cam.hflip = False
 cam.vflip = True
-CAM_RES = (640,480)
+#CAM_RES = (640,480) # regular res
+CAM_RES = (1920, 1080) # screenshot res
 cam.resolution = CAM_RES
 rawCapture = PiRGBArray(cam, size=CAM_RES)
 

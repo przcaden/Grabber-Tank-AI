@@ -356,22 +356,22 @@ def main_logic():
                 drop_sequence()
                 break
 
-            if status == 'wall' or time()-base_time <= 0.1:
-                move.motorStop()
+            # if status == 'wall' or time()-base_time <= 0.1:
+            #     move.motorStop()
 
-                # Otherwise, proceed in backtracking path
-                else:
-                    turn = path.turns.pop()
-                    base_time = path.times.pop()
+            #     # Otherwise, proceed in backtracking path
+            #     else:
+            #         turn = path.turns.pop()
+            #         base_time = path.times.pop()
 
-                    # Reverse direction of the original path, since we are moving backwards
-                    if turn == 'L':
-                        move(speed_set, 'no', 'right', 0.25)
-                    else: move(speed_set, 'no', 'left', 0.25)
+            #         # Reverse direction of the original path, since we are moving backwards
+            #         if turn == 'L':
+            #             move(speed_set, 'no', 'right', 0.25)
+            #         else: move(speed_set, 'no', 'left', 0.25)
 
-            # Continue moving forward otherwise
-            else:
-                move(speed_set, 'forward', 'no', 0)
+            # # Continue moving forward otherwise
+            # else:
+            #     move(speed_set, 'forward', 'no', 0)
 
     # Clean up GPIO and exit
     print('Finished object retrieval')

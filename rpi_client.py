@@ -255,8 +255,10 @@ def main_logic():
     base_time = time()
     dfs_time = time()
 
-    img = cam.capture('/home/pi/Pictures/ss.png')
-    img = img.array
+    for frame in cam.capture_continuous(rawCapture, resize=CAM_RES, format="bgr", use_video_port=True):
+        # Get a snapshot from RPi camera and
+        img = frame.array
+        break
     findObjects(img)
 
     while 1:

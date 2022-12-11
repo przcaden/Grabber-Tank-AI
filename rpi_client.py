@@ -231,12 +231,8 @@ def findObjects(img):
         box = cv2.boxPoints(rot_rect)
         box = numpy.int0(box)
         cv2.drawContours(img,[box],0,(0,0,0),2)
-
-    cv2.imwrite('thresh.png', thresh)
-    cv2.imwrite('clean.png', clean)
-    cv2.imwrite('newimg.png', img)
         
-    return img, closest_obj
+    return img, closest_obj, thresh, clean
 
 
 
@@ -255,41 +251,37 @@ def main_logic():
     # Time tracking
     base_time = time()
     dfs_time = time()
-
-    for frame in cam.capture_continuous(rawCapture, resize=CAM_RES, format="bgr", use_video_port=True):
-        # Get a snapshot from RPi camera and
-        img = frame.array
-        break
-    findObjects(img)
-
-    while 1:
-        sleep(1)
     
     test = True
     if test:
         for frame in cam.capture_continuous(rawCapture, resize=CAM_RES, format="bgr", use_video_port=True):
             # Get a snapshot from RPi camera and
             img = frame.array
-            (img, closest_obj) = findObjects(img)
+            (img, closest_obj, thresh, clean) = findObjects(img)
 
             # Display edited image (disable if no display is being used)
-            # cv2.imshow('Stream', img)
+            cv2.imshow('Stream', img)
 
             # Prepare next image to be fetched from the camera
-            cv2.waitKey(1)
+            key = cv2.waitKey(1)
             rawCapture.truncate(0)
+
+            if key is not None:
+                cv2.imwrite('thresh.png', thresh)
+                cv2.imwrite('clean.png', clean)
+                cv2.imwrite('newimg.png', img)
 
             status = path.wallDetected(img, closest_obj)
 
             print(status)
             
-            if status == 'grab':
-                move.motorStop()
-                grab_sequence()
-                sleep(2)
-                drop_sequence()
-            else:
-                move.move(speed_set, 'forward', 'no', 0)
+            # if status == 'grab':
+            #     move.motorStop()
+            #     grab_sequence()
+            #     sleep(2)
+            #     drop_sequence()
+            # else:
+            #     move.move(speed_set, 'forward', 'no', 0)
 
     # Main AI running block: Runs a continuous stream of video from RPi camera
     for frame in cam.capture_continuous(rawCapture, CAM_RES, format="bgr"):

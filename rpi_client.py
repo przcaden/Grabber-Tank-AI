@@ -231,6 +231,9 @@ def findObjects(img):
         box = cv2.boxPoints(rot_rect)
         box = numpy.int0(box)
         cv2.drawContours(img,[box],0,(0,0,0),2)
+
+    cv2.imwrite('thresh.png', thresh)
+    cv2.imwrite('newimg.png', img)
         
     return img, closest_obj
 
@@ -251,6 +254,13 @@ def main_logic():
     # Time tracking
     base_time = time()
     dfs_time = time()
+
+    img = cam.capture
+    img = img.array
+    findObjects(img)
+
+    while 1:
+        sleep(1)
     
     test = True
     if test:

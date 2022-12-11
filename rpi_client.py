@@ -233,6 +233,7 @@ def findObjects(img):
         cv2.drawContours(img,[box],0,(0,0,0),2)
 
     cv2.imwrite('thresh.png', thresh)
+    cv2.imwrite('clean.png', clean)
     cv2.imwrite('newimg.png', img)
         
     return img, closest_obj

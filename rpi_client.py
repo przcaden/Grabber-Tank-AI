@@ -62,6 +62,7 @@ red_upper = (179,255,255)
 kernel1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9,9))
 kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15,15))
 
+
 # Reset arm to neutral position
 def servoPosInit():
     scGear.initConfig(0,init_pwm0,1)
@@ -70,23 +71,66 @@ def servoPosInit():
     H_sc.initConfig(3,init_pwm3,1)
     G_sc.initConfig(4,init_pwm4,1)
 
+
 # Path-finding class
 class Path:
     def __init__(self):
         self.directions = [ [-1,0], [0,1], [1,0], [0,-1] ]
         self.visited = {}
-        self.times = []
-        self.turns = []
 
-    # Log a new time between turns
-    def newTime(self, base_time):
-        cur_time = time()
-        self.times.append(cur_time - base_time)
-        return cur_time
 
-    # Log a new turn
-    def newTurn(self, t):
-        self.turns.append(t)
+    # Finding a backtracking path to (0,0) using Breadth-First Search
+    def shortestPathBack(self, current_pos):
+        # Initialize algorithm variables
+        n = len(self.path)
+        queue = [current_pos]
+        visited = { current_pos : True }
+        route = [current_pos]
+        
+        # Create grid of environment
+        max_x = 0
+        max_y = 0
+        for p in self.visited:
+            coord = p.split(',')
+            if coord[0] > max_x:
+                max_x = coord[0]
+            if coord[1] > max_y:
+                max_y = coord[1]
+        grid = [[False] * max_x] * max_y
+
+        # Keep track of which nodes were traversed during pathfinding
+        for p in self.visited:
+            x, y = p.split(',')
+            grid[x][y] = True
+
+        # Create a route based off neighboring nodes
+        while len(queue) > 0:
+            current_node = queue.pop(0)
+            for node in self.neighbors(current_node):
+                if visited[node] == False:
+                    visited[node] = True
+                    queue.append(node)
+                    route.append(node)
+                if node == '0,0':
+                    queue.clear()
+                    break
+        return route
+        
+    
+    # Find neighbors of a specific node within the traversed path.
+    def neighbors(self, node):
+        neighbors = []
+        x, y = node.split(',')
+        testkeys = [(str(x) + ',' + str(y+1)),
+                (str(x+1) + ',' + str(y+1)),
+                (str(x) + ',' + str(y-1)),
+                (str(x-1) + ',' + str(y)) ]
+        for k in testkeys:
+            if k in self.visited:
+                neighbors.append(k)
+
+        return neighbors
+
 
     # Determine if coordinates have been visited already. Uses a sensitivity range of 5.
     def alreadyVisited(self, row, col, arrow):
@@ -105,6 +149,7 @@ class Path:
                 if testkey1 in self.visited or testkey2 in self.visited:
                     return True
         return False
+
 
     # Detect if an object or wall is in view and decide what action to take
     def wallDetected(self, img, closest_object):
@@ -137,69 +182,72 @@ class Path:
 
 # Grab the detected object in view
 def grab_sequence():
-    # open claw and move base
+    # Open claw and move base
     H_sc.singleServo(15, -1, 5) # open claw
     sleep(0.5)
     H_sc.stopWiggle()
     sleep(0.3)
     
-    # move base
+    # Move base servo
     H_sc.singleServo(12, -1, 3)
     sleep(0.5)
     H_sc.stopWiggle()
     sleep(0.2)
     
-    # move middle
+    # Move middle servo
     H_sc.singleServo(13, -1, 3)
     sleep(0.8)
     H_sc.stopWiggle()
     sleep(0.2)
     
-    # move base
+    # Move base servo
     H_sc.singleServo(12, -1, 3)
     sleep(0.6)
     H_sc.stopWiggle()
     sleep(0.2)
 
-    # close claw
+    # Close claw
     H_sc.singleServo(15, 1, 5)
     sleep(0.5)
     H_sc.stopWiggle()
     sleep(0.8)
 
-    # move base back up
+    # Move base back up
     H_sc.singleServo(12, 1, 2)
     sleep(1.7)
     H_sc.stopWiggle()
-    # move middle back down
+
+    # Move middle back down
     H_sc.singleServo(13, 1, 2)
     sleep(1)
     H_sc.stopWiggle()
 
+
 # Drop the object held by the arm
 def drop_sequence():
-    # move base
+    # Move base servo
     H_sc.singleServo(12, -1, 3)
     sleep(0.5)
     H_sc.stopWiggle()
     sleep(0.3)
     
-    # move middle
+    # Move middle servo
     H_sc.singleServo(13, -1, 3)
     sleep(0.8)
     H_sc.stopWiggle()
     sleep(0.3)
     
-    # move base
+    # Move base servo
     H_sc.singleServo(12, -1, 3)
     sleep(0.6)
     H_sc.stopWiggle()
     sleep(0.3)
 
-    # open claw (drop object)
+    # Open claw (drop object)
     H_sc.singleServo(15, -1, 5)
     sleep(0.5)
     H_sc.stopWiggle()
+    
     
 # Computer vision function: Given a snapshot, detect any red cube-like objects
 def findObjects(img):
@@ -244,45 +292,13 @@ def main_logic():
     # Declare algorithm variables
     path = Path()
     object_in_hand = False
-    arrow = 0 # indicates direction faced (0 = left, 1 = up, 2 = right, 4 = down)
+    arrow = 0 # Indicates direction faced (0 = left, 1 = up, 2 = right, 3 = down)
     row = 0
     col = 0
-    speed_set = 50
+    speed_set = 40
 
     # Time tracking
-    base_time = time()
     dfs_time = time()
-    
-    test = True
-    if test:
-        for frame in cam.capture_continuous(rawCapture, resize=CAM_RES, format="bgr", use_video_port=True):
-            # Get a snapshot from RPi camera and
-            img = frame.array
-            (img, closest_obj, thresh, clean) = findObjects(img)
-
-            # Display edited image (disable if no display is being used)
-            cv2.imshow('Stream', img)
-
-            # Prepare next image to be fetched from the camera
-            key = cv2.waitKey(1)
-            rawCapture.truncate(0)
-
-            if key is not None:
-                cv2.imwrite('thresh.png', thresh)
-                cv2.imwrite('clean.png', clean)
-                cv2.imwrite('newimg.png', img)
-
-            status = path.wallDetected(img, closest_obj)
-
-            print(status)
-            
-            # if status == 'grab':
-            #     move.motorStop()
-            #     grab_sequence()
-            #     sleep(2)
-            #     drop_sequence()
-            # else:
-            #     move.move(speed_set, 'forward', 'no', 0)
 
     # Main AI running block: Runs a continuous stream of video from RPi camera
     for frame in cam.capture_continuous(rawCapture, CAM_RES, format="bgr"):
@@ -308,17 +324,18 @@ def main_logic():
         if not object_in_hand:
 
             # Check if node has been traversed (DFS) and robot has traveled for 0.1 seconds
-            if not path.alreadyVisited(row, col) and time() > dfs_time + 0.1:
+            if not path.alreadyVisited(row, col) and time() >= dfs_time + 0.1:
                 path.visited.add(key)
                 
+                # Perform DFS decisionmaking based on status flag
                 if status == 'redirect_left':
-                    base_time = path.newTime(base_time)
                     move.move(speed_set, 'no', 'left', 0.25)
+                    sleep(2)
                     arrow = (arrow-1) % 4
 
                 elif status == 'redirect_right':
-                    base_time = path.newTime(base_time)
                     move.move(speed_set, 'no', 'right', 0.25)
+                    sleep(2)
                     arrow = (arrow+1) % 4
 
                 elif status == 'wall':
@@ -332,12 +349,13 @@ def main_logic():
 
                 elif status == 'grab':
                     move.motorStop()
-                    base_time = path.times.pop()
                     # Turn 180 degrees
                     move.move(speed_set, 'no', 'right', 0.25)
                     sleep(4)
                     move.motorStop()
+                    arrow = (arrow+2) % 4
                     object_in_hand = True
+                    backtrack_path = path.shortestPathBack()
 
                 else:
                     move.move(speed_set, 'forward', 'no', 0)
@@ -357,27 +375,25 @@ def main_logic():
 
         # Perform decisionmaking for backtracking if the object has been picked up
         else:
-            if not path.turns:
-                sleep(2)
+            # If path has been traversed, drop object and end the program
+            if not backtrack_path:
+                sleep(1)
                 drop_sequence()
                 break
+            
+            # Traverse to next spot in backtracking path
+            elif time() >= dfs_time + 0.1:
+                next_node = backtrack_path.pop(0)
+                x = next_node[0]
+                y = next_node[1]
+                result_vector = (x,y) - (row,col)
 
-            # if status == 'wall' or time()-base_time <= 0.1:
-            #     move.motorStop()
-
-            #     # Otherwise, proceed in backtracking path
-            #     else:
-            #         turn = path.turns.pop()
-            #         base_time = path.times.pop()
-
-            #         # Reverse direction of the original path, since we are moving backwards
-            #         if turn == 'L':
-            #             move(speed_set, 'no', 'right', 0.25)
-            #         else: move(speed_set, 'no', 'left', 0.25)
-
-            # # Continue moving forward otherwise
-            # else:
-            #     move(speed_set, 'forward', 'no', 0)
+                while arrow is not result_vector:
+                    move.move(speed_set, 'no', 'right', 0.25)
+                    sleep(2)
+                    move.motorStop()
+                    arrow = (arrow+1) % 4
+                move.move(speed_set, 'forward', 'no', 0)
 
     # Clean up GPIO and exit
     print('Finished object retrieval')

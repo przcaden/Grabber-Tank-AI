@@ -295,7 +295,6 @@ def main_logic():
         if not object_in_hand:
 
             # Check if node has been traversed (DFS) and robot has traveled for 0.1 seconds
-#             if not path.alreadyVisited(row, col, arrow) and time() >= dfs_time + 0.1:
             if key not in path.visited and time() >= dfs_time + 0.1:
                 path.visited.add(key)
                 

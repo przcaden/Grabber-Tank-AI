@@ -79,48 +79,6 @@ class Path:
         self.visited = {'0,0'}
 
 
-    # Finding a backtracking path to (0,0) using Breadth-First Search
-    def shortestPathBack(self, current_pos):
-        print('Passed pos: ' + current_pos)
-        # Initialize algorithm variables
-        n = len(self.visited)
-        queue = [current_pos]
-        init = [False for i in range(len(self.visited))]
-        visited = dict(zip(self.visited, init))
-        visited[current_pos] = True
-        route = [current_pos]
-
-        # Create a route based off neighboring nodes
-        while len(queue) > 0:
-            current_node = queue.pop(0)
-            for node in self.neighbors(current_node):
-                if visited[node] == False:
-                    visited[node] = True
-                    queue.append(node)
-                    route.append(node)
-                if node == '0,0':
-                    queue.clear()
-                    break
-        return route
-        
-    
-    # Find neighbors of a specific node within the traversed path.
-    def neighbors(self, node):
-        neighbors = []
-        x, y = node.split(',')
-        x = int(x)
-        y = int(y)
-        testkeys = [(str(x) + ',' + str(y+1)),
-                (str(x+1) + ',' + str(y+1)),
-                (str(x) + ',' + str(y-1)),
-                (str(x-1) + ',' + str(y)) ]
-        for k in testkeys:
-            if k in self.visited:
-                neighbors.append(k)
-
-        return neighbors
-
-
     # Detect if an object or wall is in view and decide what action to take
     def wallDetected(self, img, closest_object):
         img_y, img_x = img.shape[:2] # get image dimensions
@@ -258,17 +216,7 @@ def findObjects(img):
 ####################################### MAIN LOGIC METHOD #######################################
 
 def main_logic():
-
-    # Declare algorithm variables
     path = Path()
-    object_in_hand = False
-    arrow = 1 # Indicates direction faced (0 = left, 1 = up, 2 = right, 3 = down)
-    row = 0
-    col = 0
-    speed_set = 40
-
-    # Time tracking
-    dfs_time = time()
 
     # Main AI running block: Runs a continuous stream of video from RPi camera
     for frame in cam.capture_continuous(rawCapture, resize=CAM_RES, format="bgr", use_video_port=True):
@@ -288,105 +236,12 @@ def main_logic():
         status = path.wallDetected(img, closest_object)
         print('Status: ' + status)
 
-        # Generate string representation for node in path
-        key = str(row) + ',' + str(col)
-
-        # Perform decisionmaking if an object has not been picked up
-        if not object_in_hand:
-
-            # Check if node has been traversed (DFS) and robot has traveled for 0.1 seconds
-#             if not path.alreadyVisited(row, col, arrow) and time() >= dfs_time + 0.1:
-            if key not in path.visited and time() >= dfs_time + 0.1:
-                path.visited.add(key)
-                
-                # Perform DFS decisionmaking based on status flag
-                if status == 'redirect_left':
-                    move.move(speed_set, 'no', 'left', 0.25)
-                    sleep(2)
-                    arrow = (arrow-1) % 4
-
-                elif status == 'redirect_right':
-                    move.move(speed_set, 'no', 'right', 0.25)
-                    sleep(2)
-                    arrow = (arrow+1) % 4
-
-                elif status == 'wall':
-                    move.motorStop()
-                    while status == 'wall':
-                        move.move(speed_set, 'no', 'right', 0.25)
-                        sleep(2)
-                        move.motorStop()
-                        arrow = (arrow+1) % 4
-                        status = path.wallDetected(img, closest_object)
-
-                elif status == 'grab':
-                    move.motorStop()
-                    grab_sequence()
-                    # Turn 180 degrees
-                    move.move(speed_set, 'no', 'right', 0.25)
-                    sleep(4)
-                    move.motorStop()
-                    arrow = (arrow+2) % 4
-                    object_in_hand = True
-                    backtrack_path = path.shortestPathBack(key)
-                
-                elif status == 'reverse':
-                    move.move(speed_set, 'backward', 'no', 0)
-
-                else:
-                    move.move(speed_set, 'forward', 'no', 0)
-
-            # If area has been travelled, turn right
-            elif key in path.visited:
-                move.motorStop()
-                move.move(speed_set, 'no', 'right', 0.25)
-                sleep(2)
-                move.motorStop()
-                arrow = (arrow+1) % 4
-
-            # Update tracked direction faced by robot
-            curDirection = path.directions[arrow]
-            row += curDirection[0]
-            col += curDirection[1]
-
-        # Perform decisionmaking for backtracking if the object has been picked up
-        else:
-            # If path has been traversed, drop object and end the program
-            if not backtrack_path:
-                move.motorStop()
-                sleep(1)
-                drop_sequence()
-                break
-            
-            # Traverse to next spot in backtracking path
-            elif time() >= dfs_time + 0.1:
-                next_node = backtrack_path.pop(0).split(',')
-                x = int(next_node[0])
-                y = int(next_node[1])
-                result_vector = [(x-row), (y-col)]
-                if abs(x-row) > 1:
-                    result_vector[0] = result_vector[0]/abs(x-row)
-                if abs(y-col) > 1:
-                    result_vector[1] = result_vector[1]/abs(y-col)
-                print(result_vector)
-                
-                while path.directions[arrow] != result_vector and result_vector != [0,0]:
-                    print('Direction:')
-                    print(path.directions[arrow])
-                    if path.directions[arrow][0] == result_vector[0]:
-                        move.move(speed_set, 'forward', 'no', 0)
-                        result_vector[0] = 0
-                    if path.directions[arrow][1] == result_vector[1]:
-                        move.move(speed_set, 'forward', 'no', 0)
-                        result_vector[1] = 0
-                    move.move(speed_set, 'no', 'right', 0.25)
-                    sleep(2)
-                    move.motorStop()
-                    arrow = (arrow+1) % 4
-                move.move(speed_set, 'forward', 'no', 0)
-            
-            if status == 'wall':
-                move.motorStop()
+        if status == 'grab':
+            move.motorStop()
+            grab_sequence()
+            sleep(2)
+            drop_sequence()
+            break
 
     # Clean up GPIO and exit
     print('Finished object retrieval')

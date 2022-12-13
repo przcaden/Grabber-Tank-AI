@@ -165,8 +165,7 @@ class Path:
                 if x >= ((img_x/2) - w) * 0.9 and x <= ((img_x/2) + w)* 1.1:
                     return 'grab'
                 # Wall detected
-                else:
-                    return 'wall'
+                
                 
             # Object detected, change direction to approach object
             print('img width: ' + str(img_x))
@@ -175,6 +174,11 @@ class Path:
                 return 'redirect_left'
             if x < (img_x/2) + w:
                 return 'redirect_right'
+
+        elif 6 < dis < 9:
+            return 'wall'
+        elif dis < 6:
+            return 'reverse'
 
         # If no object or wall detected, carry on
         return 'none'
@@ -356,6 +360,9 @@ def main_logic():
                     arrow = (arrow+2) % 4
                     object_in_hand = True
                     backtrack_path = path.shortestPathBack()
+                
+                elif status == 'reverse':
+                    move.move(speed_set, 'backward', 'no', 0)
 
                 else:
                     move.move(speed_set, 'forward', 'no', 0)
@@ -394,6 +401,9 @@ def main_logic():
                     move.motorStop()
                     arrow = (arrow+1) % 4
                 move.move(speed_set, 'forward', 'no', 0)
+            
+            if status == 'wall':
+                move.motorStop()
 
     # Clean up GPIO and exit
     print('Finished object retrieval')

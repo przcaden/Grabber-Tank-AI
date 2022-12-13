@@ -51,8 +51,8 @@ cam.framerate = 30
 cam.rotation = 0
 cam.hflip = False
 cam.vflip = True
-#CAM_RES = (640,480) # regular res
-CAM_RES = (1920, 1080) # screenshot res
+CAM_RES = (640,480) # regular res
+#CAM_RES = (1920, 1080) # screenshot res
 cam.resolution = CAM_RES
 rawCapture = PiRGBArray(cam, size=CAM_RES)
 
@@ -76,32 +76,19 @@ def servoPosInit():
 class Path:
     def __init__(self):
         self.directions = [ [-1,0], [0,1], [1,0], [0,-1] ]
-        self.visited = {}
+        self.visited = {'0,0'}
 
 
     # Finding a backtracking path to (0,0) using Breadth-First Search
     def shortestPathBack(self, current_pos):
+        print('Passed pos: ' + current_pos)
         # Initialize algorithm variables
-        n = len(self.path)
+        n = len(self.visited)
         queue = [current_pos]
-        visited = { current_pos : True }
+        init = [False for i in range(len(self.visited))]
+        visited = dict(zip(self.visited, init))
+        visited[current_pos] = True
         route = [current_pos]
-        
-        # Create grid of environment
-        max_x = 0
-        max_y = 0
-        for p in self.visited:
-            coord = p.split(',')
-            if coord[0] > max_x:
-                max_x = coord[0]
-            if coord[1] > max_y:
-                max_y = coord[1]
-        grid = [[False] * max_x] * max_y
-
-        # Keep track of which nodes were traversed during pathfinding
-        for p in self.visited:
-            x, y = p.split(',')
-            grid[x][y] = True
 
         # Create a route based off neighboring nodes
         while len(queue) > 0:
@@ -121,6 +108,8 @@ class Path:
     def neighbors(self, node):
         neighbors = []
         x, y = node.split(',')
+        x = int(x)
+        y = int(y)
         testkeys = [(str(x) + ',' + str(y+1)),
                 (str(x+1) + ',' + str(y+1)),
                 (str(x) + ',' + str(y-1)),
@@ -133,29 +122,29 @@ class Path:
 
 
     # Determine if coordinates have been visited already. Uses a sensitivity range of 5.
-    def alreadyVisited(self, row, col, arrow):
-        # Run check if robot is facing left or right
-        if arrow == 0 or arrow == 2:
-            for i in range(5):
-                testkey1 = str(row) + ',' + str(col+i)
-                testkey2 = str(row) + ',' + str(col-i)
-                if testkey1 in self.visited or testkey2 in self.visited:
-                    return True
-        # Run check if robot is facing up or down
-        elif arrow == 1 or arrow == 3:
-            for i in range(5):
-                testkey1 = str(row+i) + ',' + str(col)
-                testkey2 = str(row-i) + ',' + str(col)
-                if testkey1 in self.visited or testkey2 in self.visited:
-                    return True
-        return False
+#     def alreadyVisited(self, row, col, arrow):
+#         # Run check if robot is facing left or right
+#         if arrow == 0 or arrow == 2:
+#             for i in range(5):
+#                 testkey1 = str(row) + ',' + str(col+i)
+#                 testkey2 = str(row) + ',' + str(col-i)
+#                 if testkey1 in self.visited or testkey2 in self.visited:
+#                     return True
+#         # Run check if robot is facing up or down
+#         elif arrow == 1 or arrow == 3:
+#             for i in range(5):
+#                 testkey1 = str(row+i) + ',' + str(col)
+#                 testkey2 = str(row-i) + ',' + str(col)
+#                 if testkey1 in self.visited or testkey2 in self.visited:
+#                     return True
+#         return False
 
 
     # Detect if an object or wall is in view and decide what action to take
     def wallDetected(self, img, closest_object):
         img_y, img_x = img.shape[:2] # get image dimensions
         dis = sense.ultra() # calculate distance in cm to nearest object
-        print(str(dis) + ' cm')
+        print('Distance: ' + str(dis) + ' cm')
         if closest_object is not None:
             x, y, w, h = cv2.boundingRect(closest_object)
             
@@ -164,12 +153,8 @@ class Path:
                 # If object is centered, opt to grab it
                 if x >= ((img_x/2) - w) * 0.9 and x <= ((img_x/2) + w)* 1.1:
                     return 'grab'
-                # Wall detected
-                
                 
             # Object detected, change direction to approach object
-            print('img width: ' + str(img_x))
-            print('object width: ' + str(w))
             if x > (img_x/2) - w:
                 return 'redirect_left'
             if x < (img_x/2) + w:
@@ -186,7 +171,7 @@ class Path:
 
 # Grab the detected object in view
 def grab_sequence():
-    # Open claw and move base
+    # Open claw
     H_sc.singleServo(15, -1, 5) # open claw
     sleep(0.5)
     H_sc.stopWiggle()
@@ -285,7 +270,7 @@ def findObjects(img):
         box = numpy.int0(box)
         cv2.drawContours(img,[box],0,(0,0,0),2)
         
-    return img, closest_obj, thresh, clean
+    return img, closest_obj
 
 
 
@@ -296,7 +281,7 @@ def main_logic():
     # Declare algorithm variables
     path = Path()
     object_in_hand = False
-    arrow = 0 # Indicates direction faced (0 = left, 1 = up, 2 = right, 3 = down)
+    arrow = 1 # Indicates direction faced (0 = left, 1 = up, 2 = right, 3 = down)
     row = 0
     col = 0
     speed_set = 40
@@ -305,21 +290,22 @@ def main_logic():
     dfs_time = time()
 
     # Main AI running block: Runs a continuous stream of video from RPi camera
-    for frame in cam.capture_continuous(rawCapture, CAM_RES, format="bgr"):
+    for frame in cam.capture_continuous(rawCapture, resize=CAM_RES, format="bgr", use_video_port=True):
 
         # Get a snapshot from RPi camera and detect if any objects are in view
         img = frame.array
         (img, closest_object) = findObjects(img)
 
         # Display edited image (disable if no display is being used)
-        # cv2.imshow('Stream', img)
+        cv2.imshow('Stream', img)
 
         # Prepare next image to be fetched from the camera
         cv2.waitKey(1)
         rawCapture.truncate(0)
 
         # Create a status flag, depending on distance from detected objects or walls
-        status = path.wallDetected(closest_object, img)
+        status = path.wallDetected(img, closest_object)
+        print('Status: ' + status)
 
         # Generate string representation for node in path
         key = str(row) + ',' + str(col)
@@ -328,7 +314,8 @@ def main_logic():
         if not object_in_hand:
 
             # Check if node has been traversed (DFS) and robot has traveled for 0.1 seconds
-            if not path.alreadyVisited(row, col) and time() >= dfs_time + 0.1:
+#             if not path.alreadyVisited(row, col, arrow) and time() >= dfs_time + 0.1:
+            if key not in path.visited and time() >= dfs_time + 0.1:
                 path.visited.add(key)
                 
                 # Perform DFS decisionmaking based on status flag
@@ -349,17 +336,18 @@ def main_logic():
                         sleep(2)
                         move.motorStop()
                         arrow = (arrow+1) % 4
-                        status = path.wallDetected()
+                        status = path.wallDetected(img, closest_object)
 
                 elif status == 'grab':
                     move.motorStop()
+                    grab_sequence()
                     # Turn 180 degrees
                     move.move(speed_set, 'no', 'right', 0.25)
                     sleep(4)
                     move.motorStop()
                     arrow = (arrow+2) % 4
                     object_in_hand = True
-                    backtrack_path = path.shortestPathBack()
+                    backtrack_path = path.shortestPathBack(key)
                 
                 elif status == 'reverse':
                     move.move(speed_set, 'backward', 'no', 0)
@@ -368,9 +356,9 @@ def main_logic():
                     move.move(speed_set, 'forward', 'no', 0)
 
             # If area has been travelled, turn right
-            elif path.alreadyVisited(row, col):
+            elif key in path.visited:
                 move.motorStop()
-                move(speed_set, 'no', 'right', 0.25)
+                move.move(speed_set, 'no', 'right', 0.25)
                 sleep(2)
                 move.motorStop()
                 arrow = (arrow+1) % 4
@@ -384,18 +372,32 @@ def main_logic():
         else:
             # If path has been traversed, drop object and end the program
             if not backtrack_path:
+                move.motorStop()
                 sleep(1)
                 drop_sequence()
                 break
             
             # Traverse to next spot in backtracking path
             elif time() >= dfs_time + 0.1:
-                next_node = backtrack_path.pop(0)
-                x = next_node[0]
-                y = next_node[1]
-                result_vector = (x,y) - (row,col)
-
-                while arrow is not result_vector:
+                next_node = backtrack_path.pop(0).split(',')
+                x = int(next_node[0])
+                y = int(next_node[1])
+                result_vector = [(x-row), (y-col)]
+                if abs(x-row) > 1:
+                    result_vector[0] = result_vector[0]/abs(x-row)
+                if abs(y-col) > 1:
+                    result_vector[1] = result_vector[1]/abs(y-col)
+                print(result_vector)
+                
+                while path.directions[arrow] != result_vector and result_vector != [0,0]:
+                    print('Direction:')
+                    print(path.directions[arrow])
+                    if path.directions[arrow][0] == result_vector[0]:
+                        move.move(speed_set, 'forward', 'no', 0)
+                        result_vector[0] = 0
+                    if path.directions[arrow][1] == result_vector[1]:
+                        move.move(speed_set, 'forward', 'no', 0)
+                        result_vector[1] = 0
                     move.move(speed_set, 'no', 'right', 0.25)
                     sleep(2)
                     move.motorStop()

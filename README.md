@@ -10,7 +10,7 @@
 ## Introduction
 &emsp; This project involves the creation, design, and application of an autonomous robot using a Raspberry Pi embedded computer. The robot features path tracing capabilities to map an environment it is placed in while maneuvering around walls or obstacles in its path. The robot utilizes computer vision and OpenCV to detect red, cube-like objects in its view. It will pick up these objects with a mechanical arm on the top of its enclosure, then backtracking to its original location and placing the object back down. <br>
 
-:bulb: Key electrical components: A Raspberry Pi camera, 2 DC motors, five servo motors, and an ultrasonic distance sensor.
+:bulb: Key electrical components: A Raspberry Pi camera, 2 DC motors, five servo motors, and an ultrasonic sensor.
 
 <p align="center">
   <img width="460" height="300" src="https://www.settorezero.com/wordpress/contents/2020/12/rasptank_header-1-1360x765.jpg">

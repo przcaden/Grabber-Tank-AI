@@ -12,6 +12,10 @@
 
 :bulb: Key electrical components: A Raspberry Pi camera, 2 DC motors, five servo motors, and an ultrasonic distance sensor.
 
+<p align="center">
+  <img width="460" height="300" src="https://www.settorezero.com/wordpress/contents/2020/12/rasptank_header-1-1360x765.jpg">
+</p>
+
 ## :arrow_right_hook: Pathfinding / Backtracking
 &emsp; The robot's pathfinding was intended to autonomously traverse an environment it is placed in. It utilizes a Depth-First Search algorithm to do so. It only explores new territory until it reaches a valid object to be picked up. To perform this accurately and to work in conjunction with the backtracking as well, a key containing therobot's current coordinates is generated every 100 milliseconds and continues to do so until the path to the object is found. <br>
 &emsp; The robot's backtracking uses generated keys in order to find its way back to its origin. It uses a Breadth-First Search algorithm upon the generated keys, which finds the shortest path back to its original location. After doing so, it will place the object back down on the floor.
@@ -23,12 +27,16 @@ it. Then, a binary (black and white) threshold-filtered image could be generated
 of red. Next, compound morphology could be used on the binary image to create a clearer shape of any potential objects of the image. This step clears out any edges of
 any detected polygons of the image. Below, you may see an image of a generated binary image. In this example, a 3D-printed red cube and a marker cap are in view.
 
-<img align="center" width="460" height="300" src="https://i.imgur.com/QnK5Nos.png">
+<p align="center">
+  <img width="460" height="300" src="https://i.imgur.com/QnK5Nos.png">
+</p>
 
 With this cleaned up threshold image, we can then detect any polygons in view and count their total number of contours. If they contain four (forming the shape of a
 rectangle or square) a bounding rectangle is drawn around the image. These objects will be selected to be picked up. An example of a finished image can be seen below.
 
-<img align="center" width="460" height="300" src="https://i.imgur.com/cN0QhAi.png">
+<p align="center">
+  <img width="460" height="300" src="https://i.imgur.com/cN0QhAi.png">
+</p>
 
 Once the robot detects this object, it will begin to move toward it and turn such that it will be centered in the camera's view. Using the ultrasonic sensor, we can
 determine how close the object is to the robot. If the robot is within sufficient distance of the object (between 6 and 9 cm) the grab sequence will be initiated.

@@ -8,19 +8,13 @@
 :computer: Back-tracking capabilities <br />
 
 ## Introduction
-&emsp; This project involves the creation, design, and application of an autonomous robot using a Raspberry Pi embedded computer. The robot features path tracing capabilities
-to map an environment it is placed in while maneuvering around walls or obstacles in its path. The robot utilizes computer vision and OpenCV to detect red, cube-like 
-objects in its view. It will pick up these objects with a mechanical arm on the top of its enclosure, then backtracking to its original location and placing the object 
-back down. <br>
+&emsp; This project involves the creation, design, and application of an autonomous robot using a Raspberry Pi embedded computer. The robot features path tracing capabilities to map an environment it is placed in while maneuvering around walls or obstacles in its path. The robot utilizes computer vision and OpenCV to detect red, cube-like objects in its view. It will pick up these objects with a mechanical arm on the top of its enclosure, then backtracking to its original location and placing the object back down. <br>
 
 :bulb: Key electrical components: A Raspberry Pi camera, 2 DC motors, five servo motors, and an ultrasonic distance sensor.
 
 ## :arrow_right_hook: Pathfinding / Backtracking
-&emsp; The robot's pathfinding was intended to autonomously traverse an environment it is placed in. It utilizes a Depth-First Search algorithm to do so. It only explores new 
-territory until it reaches a valid object to be picked up. To perform this accurately and to work in conjunction with the backtracking as well, a key containing the
-robot's current coordinates is generated every 100 milliseconds and continues to do so until the path to the object is found. <br>
-&emsp; The robot's backtracking uses generated keys in order to find its way back to its origin. It uses a Breadth-First Search algorithm upon the generated keys, which finds
-the shortest path back to its original location. After doing so, it will place the object back down on the floor.
+&emsp; The robot's pathfinding was intended to autonomously traverse an environment it is placed in. It utilizes a Depth-First Search algorithm to do so. It only explores new territory until it reaches a valid object to be picked up. To perform this accurately and to work in conjunction with the backtracking as well, a key containing therobot's current coordinates is generated every 100 milliseconds and continues to do so until the path to the object is found. <br>
+&emsp; The robot's backtracking uses generated keys in order to find its way back to its origin. It uses a Breadth-First Search algorithm upon the generated keys, which finds the shortest path back to its original location. After doing so, it will place the object back down on the floor.
 
 ## :camera_flash: Computer Vision
 &emsp; In order to detect the correct objects in front of it, the robot will utilize both the Raspberry Pi camera and the ultrasonic sensor. Using the camera, image
@@ -43,7 +37,7 @@ determine how close the object is to the robot. If the robot is within sufficien
 &emsp; Due to issues with electronic components used with the projects, testing was not able to be fully finished. As a result, movement may be jittery or get stuck.
 This is due to servo and DC motors on the original prototype breaking down.
  
-## Future Updates
+## :arrows_counterclockwise: Future Updates
 &emsp; Since this project was done as a project for a undergraduate college-level course, time to complete this project was limited. The following would be done if the
 project was taken to completion:
   - Clean up pathfinding capabilities
